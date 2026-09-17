@@ -1,0 +1,9 @@
+name: "velora-tarot"
+main: "src/index.ts"
+compatibility_date: "2024-09-30"
+compatibility_flags: []
+
+[env.production]
+WORKER_NAME = "velora-tarot"
+
+[vars.production]

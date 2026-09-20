@@ -1,11 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // Experimental features for Cloudflare Pages
-  experimental: {
-    appRouter: true,
-    serverComponents: true,
-  },
   // Output format for Cloudflare
   output: "standalone",
   // Compress HTML
@@ -22,7 +17,6 @@ const nextConfig = {
     config.resolve.alias.canvas = "canvas";
     config.resolve.alias.stream = "stream-browserify";
     config.resolve.alias.buffer = "buffer";
-    config.resolve.aliasutil = "buffer";
     return config;
   },
 };

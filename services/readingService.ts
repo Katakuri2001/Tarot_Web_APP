@@ -104,4 +104,10 @@ export function saveReadingToStorage(reading: SavedReading): void {
 }
 
 // Keep backward compatibility exports
-export { saveReadingToStorage, getReadingsFromStorage };
+export function hasIntroPlayed(): boolean {
+  return sessionStorage.getItem("velora_intro_played") === "true";
+}
+
+export function markIntroPlayed(): void {
+  sessionStorage.setItem("velora_intro_played", "true");
+}

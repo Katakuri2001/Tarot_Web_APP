@@ -1,0 +1,23 @@
+name = "velora-tarot-admin"
+main = "worker/src/index.ts"
+compatibility_date = "2024-09-30"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "velora-db"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "velora-images"
+
+[vars]
+JWT_ISSUER = "velora-admin"
+TOKEN_TTL_SECONDS = "43200"
+MAX_IMAGE_BYTES = "5242880"
+
+# [env.production]
+# [[env.production.d1_databases]]
+# binding = "DB"
+# database_name = "velora-db"
+# database_id = "REPLACE_WITH_D1_DATABASE_ID"

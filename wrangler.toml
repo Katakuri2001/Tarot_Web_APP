@@ -1,9 +1,10 @@
-name: "velora-tarot"
-main: "src/index.ts"
-compatibility_date: "2024-09-30"
-compatibility_flags: []
+name = "velora-tarot"
+compatibility_date = "2024-09-30"
 
 [env.production]
-WORKER_NAME = "velora-tarot"
+  pages_build_output_dir = ".next"
 
-[vars.production]
+[vars]
+  JWT_SECRET = "change-me-in-production"
+  JWT_ISSUER = "velora-admin"
+  TOKEN_TTL_SECONDS = "43200"

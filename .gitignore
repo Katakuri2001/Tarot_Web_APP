@@ -11,3 +11,8 @@ node_modules
 /src/
 /tests/
 /__tests__/
+tsconfig.tsbuildinfo
+.dev.vars*
+admin/dist/
+playwright-report/
+test-results/

@@ -1,6 +1,5 @@
 import { motion } from "framer-motion";
 import { useReducedMotion } from "@/hooks/useShared";
-import Logo from "@/components/brand/Logo";
 import type { Orientation } from "@/data/types";
 
 interface CardFrontProps {
@@ -31,50 +30,60 @@ export default function CardFront({ name, keywords, arcana, suit, number, orient
     pentacles: "◈",
   };
 
+  const color = suitColors[suit] || "#d4b85a";
+  const symbol = suitSymbol[suit] || "✦";
+
   return (
     <div className="relative w-full h-full flex flex-col" style={{ transform: isReversed ? "scaleX(-1)" : undefined }}>
-      <div className="flex-1 rounded-lg overflow-hidden relative" style={{
-        background: "linear-gradient(135deg, #1a0a3e 0%, #2d1b69 50%, #06060f 100%)",
-        border: "1px solid rgba(212,184,90,0.3)",
-      }}>
+      <div
+        className="flex-1 rounded-lg overflow-hidden relative"
+        style={{
+          background: "linear-gradient(135deg, #1a0a3e 0%, #2d1b69 50%, #06060f 100%)",
+          border: `1px solid ${color}33`,
+        }}
+      >
         {/* Top decoration */}
         <div className="absolute top-3 left-3 right-3 flex justify-between items-center">
-          <span className="text-gold-300 text-xs font-serif-display" style={{ opacity: 0.7 }}>
+          <span className="font-serif-display text-xs" style={{ opacity: 0.6, color }}>
             {arcana === "major" ? `${String(number).padStart(2, "0")}` : suit?.charAt(0).toUpperCase() + suit?.slice(1)}
           </span>
-          <span className="text-gold-300 text-sm" style={{ opacity: 0.6 }}>
-            {suitSymbol[suit] || "✦"}
+          <span className="text-lg" style={{ opacity: 0.5, color }}>
+            {symbol}
           </span>
         </div>
 
-        {/* Center area */}
+        {/* Center illustration area */}
         <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
+          {/* Glow ring */}
           <motion.div
-            className="w-16 h-16 rounded-full mb-3 flex items-center justify-center"
-            style={{ background: "radial-gradient(circle, rgba(212,184,90,0.2) 0%, transparent 70%)" }}
-            animate={!reducedMotion ? { opacity: [0.5, 1, 0.5] } : {}}
-            transition={{ duration: 3, repeat: Infinity }}
+            className="w-20 h-20 rounded-full mb-3 flex items-center justify-center relative"
+            style={{ background: `radial-gradient(circle, ${color}15 0%, transparent 70%)` }}
+            animate={!reducedMotion ? { opacity: [0.4, 0.8, 0.4] } : {}}
+            transition={{ duration: 4, repeat: Infinity }}
           >
-            <span className="text-gold-300 text-2xl font-serif-display" style={{ opacity: 0.8 }}>
-              {suitSymbol[suit] || "✦"}
+            <span className="text-3xl" style={{ opacity: 0.7, color }}>
+              {symbol}
             </span>
           </motion.div>
 
-          <h3 className="font-serif-display text-lg text-warmwhite text-center" style={{ fontWeight: 400 }}>
+          {/* Card name */}
+          <h3 className="font-serif-display text-base text-center leading-tight" style={{ color: "rgba(240,235,230,0.9)", fontWeight: 400 }}>
             {name}
           </h3>
         </div>
 
-        {/* Bottom */}
+        {/* Bottom info */}
         <div className="absolute bottom-3 left-3 right-3 flex justify-between items-center">
-          <span className="text-coolgray text-xs">{keywords.slice(0, 2).join(" • ")}</span>
-          <span className="text-gold-300 text-xs" style={{ opacity: 0.5 }}>
+          <span className="text-xs" style={{ opacity: 0.5, color: "rgba(138,133,149,0.7)" }}>
+            {keywords.slice(0, 2).join(" • ")}
+          </span>
+          <span className="font-serif-display text-xs" style={{ opacity: 0.4, color }}>
             {String(number).padStart(2, "0")}
           </span>
         </div>
 
         {/* Decorative border */}
-        <div className="absolute inset-1 rounded-md pointer-events-none" style={{ border: "1px solid rgba(212,184,90,0.1)" }} />
+        <div className="absolute inset-1 rounded-md pointer-events-none" style={{ border: `1px solid ${color}15` }} />
       </div>
     </div>
   );

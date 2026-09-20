@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import IntroAnimation from "@/components/brand/IntroAnimation";
 import StarBackground from "@/components/StarBackground";
 import Navigation from "@/components/Navigation";
 import { hasIntroPlayed } from "@/services/readingService";
@@ -19,7 +18,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <>
       <StarBackground />
       <Navigation />
-      {showIntro && <IntroAnimation onComplete={() => setShowIntro(false)} />}
+      {showIntro && (
+        <div className="fixed inset-0 z-50 bg-deepnight flex items-center justify-center">
+          <div className="w-8 h-8 rounded-full bg-gold-300 animate-pulse" />
+        </div>
+      )}
       <main className="relative z-10">{children}</main>
     </>
   );

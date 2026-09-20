@@ -28,17 +28,16 @@ export default function IntroAnimation({ onComplete }: IntroAnimationProps) {
     timers.push(
       setTimeout(() => {
         setPhase(1);
-        timers.push(setTimeout(() => setPhase(2), 600));
-        timers.push(setTimeout(() => setPhase(3), 1200));
-        timers.push(setTimeout(() => setPhase(4), 1800));
-        timers.push(setTimeout(() => setPhase(5), 2400));
+        timers.push(setTimeout(() => setPhase(2), 800));
+        timers.push(setTimeout(() => setPhase(3), 1600));
+        timers.push(setTimeout(() => setPhase(4), 2400));
         timers.push(
           setTimeout(() => {
             markIntroPlayed();
             onComplete();
-          }, 3000)
+          }, 3200)
         );
-      }, 500)
+      }, 400)
     );
 
     return () => {
@@ -46,19 +45,27 @@ export default function IntroAnimation({ onComplete }: IntroAnimationProps) {
     };
   }, [onComplete, reducedMotion]);
 
-  const fadeIn = {
-    initial: { opacity: 0 },
-    animate: { opacity: 1 },
-    transition: { duration: reducedMotion ? 0.3 : 0.8, ease: "easeOut" },
-  };
-
   return (
     <motion.div
       className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-deepnight"
-      onAnimationComplete={() => {
-        if (phase >= 4 && !skipReady) setSkipReady(true);
-      }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.8 }}
     >
+      {/* Phase 0: Tiny point of light in darkness */}
+      <AnimatePresence>
+        {phase === 0 && (
+          <motion.div
+            className="absolute inset-0 bg-deepnight"
+            initial={{ opacity: 1 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Phase 0: Tiny star */}
       <AnimatePresence>
         {phase === 0 && (
@@ -66,75 +73,92 @@ export default function IntroAnimation({ onComplete }: IntroAnimationProps) {
             className="w-1.5 h-1.5 rounded-full bg-gold-300"
             initial={{ opacity: 0, scale: 0 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
+            exit={{ opacity: 0, scale: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
           />
         )}
       </AnimatePresence>
 
-      {/* Phase 1: Star grows + glow */}
+      {/* Phase 1: Celestial glow and lines */}
       <AnimatePresence>
-        {phase >= 1 && phase < 2 && (
+        {phase === 1 && (
           <>
             <motion.div
-              className="absolute w-32 h-32 rounded-full"
+              className="absolute w-40 h-40 rounded-full"
               style={{
-                background: "radial-gradient(circle, rgba(212,184,90,0.2) 0%, transparent 70%)",
+                background: "radial-gradient(circle, rgba(212,184,90,0.15) 0%, rgba(26,10,62,0.05) 40%, transparent 70%)",
               }}
               initial={{ opacity: 0, scale: 0 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 1 }}
+              transition={{ duration: 1.2, ease: "easeOut" }}
             />
             <motion.div
-              className="w-2 h-2 rounded-full bg-gold-300"
+              className="absolute w-2 h-2 rounded-full bg-gold-300"
               initial={{ opacity: 0, scale: 0 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.5 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+            />
+            {/* Celestial lines */}
+            <motion.div
+              className="absolute w-48 h-48 rounded-full border border-gold-400/10"
+              style={{ borderStyle: "dashed" }}
+              initial={{ opacity: 0, rotate: 0, scale: 0 }}
+              animate={{ opacity: 0.3, rotate: 45, scale: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 1, delay: 0.5 }}
+            />
+            <motion.div
+              className="absolute w-48 h-48 rounded-full border border-gold-400/10"
+              style={{ borderStyle: "dashed" }}
+              initial={{ opacity: 0, rotate: 0, scale: 0 }}
+              animate={{ opacity: 0.2, rotate: -45, scale: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 1, delay: 0.7 }}
             />
           </>
         )}
       </AnimatePresence>
 
-      {/* Phase 2: Brand symbol appears */}
+      {/* Phase 2: Symbol emergence */}
       <AnimatePresence>
-        {phase >= 2 && phase < 3 && (
+        {phase === 2 && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.5, rotate: -30 }}
-            animate={{ opacity: 1, scale: 1, rotate: 0 }}
+            initial={{ opacity: 0, scale: 0.4, filter: "blur(8px)" }}
+            animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
             exit={{ opacity: 0, scale: 1.1 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
+            transition={{ duration: 1, ease: "easeOut" }}
           >
             <Logo size="small" />
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Phase 3: Brand name + tagline */}
+      {/* Phase 3: Brand reveal */}
       <AnimatePresence>
-        {phase >= 3 && phase < 4 && (
+        {phase === 3 && (
           <motion.div
-            className="flex flex-col items-center gap-2"
+            className="flex flex-col items-center gap-1"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.8 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
           >
             <motion.h1
-              className="font-serif-display text-4xl md:text-5xl tracking-widest text-gold-300"
-              style={{ fontWeight: 300 }}
+              className="font-serif-display text-3xl md:text-4xl text-warmwhite"
+              style={{ fontWeight: 300, letterSpacing: "0.02em" }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.2, duration: 0.6 }}
+              transition={{ delay: 0.2, duration: 0.8 }}
             >
               VELORA
             </motion.h1>
             <motion.p
-              className="font-serif-display text-sm md:text-base tracking-wider text-moonlight italic"
+              className="font-serif-display text-sm text-moonlight italic"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.5, duration: 0.6 }}
+              transition={{ delay: 0.5, duration: 0.8 }}
             >
               Read Beyond The Visible.
             </motion.p>
@@ -142,7 +166,7 @@ export default function IntroAnimation({ onComplete }: IntroAnimationProps) {
         )}
       </AnimatePresence>
 
-      {/* Phase 4: Logo glow + transition */}
+      {/* Phase 4: Final glow + transition */}
       <AnimatePresence>
         {phase >= 4 && (
           <motion.div
@@ -150,19 +174,19 @@ export default function IntroAnimation({ onComplete }: IntroAnimationProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 1 }}
+            transition={{ duration: 0.8 }}
           >
             <div
-              className="w-64 h-64 rounded-full"
+              className="w-72 h-72 rounded-full"
               style={{
-                background: "radial-gradient(circle, rgba(212,184,90,0.15) 0%, rgba(26,10,62,0.1) 50%, transparent 70%)",
+                background: "radial-gradient(circle, rgba(212,184,90,0.1) 0%, rgba(26,10,62,0.05) 50%, transparent 70%)",
               }}
             />
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Skip intro for returning users - hidden but works */}
+      {/* Skip intro for returning users */}
       {skipReady && phase >= 4 && (
         <button
           onClick={() => {

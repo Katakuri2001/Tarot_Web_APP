@@ -2,10 +2,14 @@ name = "velora-tarot-admin"
 main = "worker/src/index.ts"
 compatibility_date = "2024-09-30"
 
-# D1 and R2 bindings require actual Cloudflare resource IDs
-# Create D1 database: npx wrangler d1 create velora-db
-# Create R2 bucket: npx wrangler r2 bucket create velora-images
-# Then update this file with the actual IDs
+[[d1_databases]]
+binding = "DB"
+database_name = "velora-db"
+database_id = "ef8af1f8-8249-426e-a5a1-3fc79ce3d68c"
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "velora-images"
 
 [vars]
 JWT_ISSUER = "velora-admin"

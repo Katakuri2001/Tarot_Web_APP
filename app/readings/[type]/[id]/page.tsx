@@ -11,7 +11,7 @@ import { getCardById, getCardInterpretation, getPositionMeaning, getReadingTypeL
 import { getReadingsFromStorage } from "@/services/readingService";
 import { useSound } from "@/services/soundService";
 import { useReducedMotion } from "@/hooks/useShared";
-import { getTomorrowDate, formatDate } from "@/utils/dateUtils";
+import { formatDate } from "@/utils/dateUtils";
 import type { Orientation } from "@/data/types";
 import type { SavedReading } from "@/data/types";
 
@@ -25,6 +25,7 @@ export default function ReadingResultPage() {
   const [cards, setCards] = useState<SavedReading | null>(null);
   const [revealedIndex, setRevealedIndex] = useState(-1);
   const [showSummary, setShowSummary] = useState(false);
+  const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
     const readings = getReadingsFromStorage();
@@ -32,12 +33,7 @@ export default function ReadingResultPage() {
     if (found) {
       setCards(found);
     } else {
-      // Create from tarot data if available
-      const allReadings = getReadingsFromStorage();
-      const matching = allReadings.find((r) => r.id === id);
-      if (matching) {
-        setCards(matching);
-      }
+      setNotFound(true);
     }
   }, [id]);
 
@@ -53,6 +49,19 @@ export default function ReadingResultPage() {
       return () => clearTimeout(timer);
     }
   }, [cards, revealedIndex, reveal]);
+
+  if (notFound) {
+    return (
+      <div className="min-h-screen flex items-center justify-center pt-24 px-4">
+        <div className="text-center">
+          <p className="text-moonlight mb-4">Reading not found. Please start a new reading.</p>
+          <button onClick={() => router.push("/readings")} className="px-6 py-3 rounded-full border border-gold-400/30 text-gold-300 text-sm tracking-wider hover:border-gold-400/60 transition-all">
+            Start a Reading
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (!cards) {
     return (
@@ -95,7 +104,6 @@ export default function ReadingResultPage() {
 
       <main className="relative z-10 min-h-screen pt-24 px-4 pb-24">
         <div className="max-w-5xl mx-auto">
-          {/* Header */}
           <motion.div
             className="text-center mb-12"
             initial={{ opacity: 0, y: 20 }}
@@ -105,7 +113,6 @@ export default function ReadingResultPage() {
             <p className="text-coolgray text-sm">{dateStr}</p>
           </motion.div>
 
-          {/* Cards */}
           <div className="flex flex-wrap justify-center gap-6 md:gap-8 mb-16">
             {cards.cards.map((card, i) => {
               const cardData = getCardById(card.cardId);
@@ -120,7 +127,6 @@ export default function ReadingResultPage() {
                   animate={isRevealed ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
                   transition={reducedMotion ? { duration: 0.3 } : { duration: 0.6, delay: i * 0.2 }}
                 >
-                  {/* Position label */}
                   {cards.cards.length > 1 && (
                     <p className="text-center text-gold-300 tracking-widest uppercase text-xs mb-3">
                       {getPositionMeaning(card.position)}
@@ -161,7 +167,6 @@ export default function ReadingResultPage() {
             })}
           </div>
 
-          {/* Summary */}
           {showSummary && (
             <motion.div
               className="max-w-3xl mx-auto mb-12"
@@ -210,12 +215,11 @@ export default function ReadingResultPage() {
                 })}
               </div>
 
-              {/* Reading Summary */}
               <div className="mt-8 glass p-6 rounded-xl">
                 <h3 className="font-serif-display text-lg text-gold-300 mb-3">Reading Summary</h3>
                 <p className="text-moonlight text-sm leading-relaxed">
                   Your {cards.category.toLowerCase()} reading reveals {cards.cards.length}
-                  {cards.cards.length === 1 ? "" : ""} card{cards.cards.length > 1 ? "s" : ""} of insight.{" "}
+                  {cards.cards.length === 1 ? "" : "s"} card{cards.cards.length > 1 ? "s" : ""} of insight.{" "}
                   {cards.cards.map((c) => {
                     const cd = getCardById(c.cardId);
                     return cd ? cd.name : "";
@@ -226,7 +230,6 @@ export default function ReadingResultPage() {
             </motion.div>
           )}
 
-          {/* Actions */}
           {showSummary && (
             <motion.div
               className="flex justify-center gap-4 flex-wrap"

@@ -31,8 +31,8 @@ export default function HomePage() {
 
       <main className="relative z-10">
         {/* Hero Section */}
-        <section className="min-h-screen flex items-center justify-center px-4 pt-20">
-          <div className="max-w-5xl w-full grid md:grid-cols-2 gap-16 items-center">
+        <section className="min-h-screen flex items-center justify-center px-4 pt-20 sm:pt-24 pb-8">
+          <div className="max-w-5xl w-full grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
             {/* Text */}
             <div className="order-2 md:order-1">
               <motion.p
@@ -91,14 +91,14 @@ export default function HomePage() {
             <div className="order-1 md:order-2 flex justify-center">
               <motion.div
                 className="relative"
-                animate={{ y: [0, -12, 0], rotate: [0, 1.5, 0] }}
+                animate={{ y: [0, -8, 0], rotate: [0, 1, 0] }}
                 transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
               >
                 {/* Floating tarot card */}
                 <div
-                  className="w-52 h-76 md:w-60 md:h-84 rounded-xl overflow-hidden relative"
+                  className="w-44 sm:w-48 aspect-[2/3] rounded-xl overflow-hidden relative"
                   style={{
-                    boxShadow: "0 0 60px rgba(212,184,90,0.12), 0 0 120px rgba(26,10,62,0.25)",
+                    boxShadow: "0 0 40px rgba(212,184,90,0.12), 0 0 80px rgba(26,10,62,0.25)",
                   }}
                 >
                   <img
@@ -152,7 +152,7 @@ export default function HomePage() {
               </p>
             </motion.div>
 
-            <div className="grid sm:grid-cols-2 gap-5 max-w-2xl mx-auto">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
               {[
                 { href: "/readings/daily", title: "Daily Reading", desc: "One card for today's energy", icon: "☀" },
                 { href: "/readings/love", title: "Love Reading", desc: "Three cards of the heart", icon: "♥" },

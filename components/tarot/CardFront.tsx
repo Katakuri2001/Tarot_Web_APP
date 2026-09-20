@@ -56,7 +56,7 @@ export default function CardFront({ name, keywords, arcana, suit, number, orient
         <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
           {/* Glow ring */}
           <motion.div
-            className="w-20 h-20 rounded-full mb-3 flex items-center justify-center relative"
+            className="w-24 h-24 sm:w-28 sm:h-28 rounded-full mb-2 flex items-center justify-center relative"
             style={{ background: `radial-gradient(circle, ${color}15 0%, transparent 70%)` }}
             animate={!reducedMotion ? { opacity: [0.4, 0.8, 0.4] } : {}}
             transition={{ duration: 4, repeat: Infinity }}

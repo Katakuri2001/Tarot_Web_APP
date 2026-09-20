@@ -10,7 +10,7 @@ export default function AboutPage() {
       <StarBackground />
       <Navigation />
 
-      <main className="relative z-10 min-h-screen pt-24 px-4 pb-24">
+      <main className="relative z-10 min-h-screen pt-16 sm:pt-20 px-4 pb-16 safe-top safe-bottom">
         <div className="max-w-3xl mx-auto">
           <motion.div
             className="text-center mb-16"
@@ -23,9 +23,9 @@ export default function AboutPage() {
             </h1>
           </motion.div>
 
-          <div className="space-y-12">
-            <section className="glass p-8 rounded-2xl">
-              <h2 className="font-serif-display text-xl text-warmwhite mb-4">Our Philosophy</h2>
+          <div className="space-y-8 sm:space-y-12">
+            <section className="glass p-5 sm:p-6 rounded-xl">
+              <h2 className="font-serif-display text-lg sm:text-xl text-warmwhite mb-4">Our Philosophy</h2>
               <p className="text-moonlight leading-relaxed">
                 Velora is built on the belief that tarot is a mirror — reflecting not
                 what will happen, but what is possible. Every card is an invitation
@@ -34,8 +34,8 @@ export default function AboutPage() {
               </p>
             </section>
 
-            <section className="glass p-8 rounded-2xl">
-              <h2 className="font-serif-display text-xl text-warmwhite mb-4">The Deck</h2>
+            <section className="glass p-5 sm:p-6 rounded-xl">
+              <h2 className="font-serif-display text-lg sm:text-xl text-warmwhite mb-4">The Deck</h2>
               <p className="text-moonlight leading-relaxed">
                 Our readings draw from the complete 78-card tarot tradition — 22
                 cards of the Major Arcana and 56 of the Minor. Each carries its own
@@ -45,8 +45,8 @@ export default function AboutPage() {
               </p>
             </section>
 
-            <section className="glass p-8 rounded-2xl">
-              <h2 className="font-serif-display text-xl text-warmwhite mb-4">How It Works</h2>
+            <section className="glass p-5 sm:p-6 rounded-xl">
+              <h2 className="font-serif-display text-lg sm:text-xl text-warmwhite mb-4">How It Works</h2>
               <div className="space-y-4">
                 {[
                   "Choose a reading type that speaks to where you are.",
@@ -64,8 +64,8 @@ export default function AboutPage() {
               </div>
             </section>
 
-            <section className="glass p-8 rounded-2xl">
-              <h2 className="font-serif-display text-xl text-warmwhite mb-4">A Note on Intention</h2>
+            <section className="glass p-5 sm:p-6 rounded-xl">
+              <h2 className="font-serif-display text-lg sm:text-xl text-warmwhite mb-4">A Note on Intention</h2>
               <p className="text-moonlight leading-relaxed">
                 Tarot is not fortune-telling. It is reflection. The cards open a
                 door — what you find on the other side is your own truth, your own

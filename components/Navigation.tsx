@@ -78,9 +78,10 @@ export default function Navigation() {
 
       {/* Mobile menu */}
       <div
-        className={`md:hidden glass-dark border-t border-gold-400/10 overflow-hidden transition-all duration-300 ${
-          mobileOpen ? "max-h-96" : "max-h-0"
+        className={`md:hidden glass-dark border-t border-gold-400/10 overflow-hidden transition-all duration-300 overscroll-behavior-contain ${
+          mobileOpen ? "max-h-[80vh]" : "max-h-0"
         }`}
+        style={{ overscrollBehavior: "contain" }}
       >
         <div className="px-4 py-4 flex flex-col gap-3">
           {navLinks.map((link) => (

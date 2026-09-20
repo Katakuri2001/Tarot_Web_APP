@@ -87,13 +87,13 @@ export default function TarotTable({ readingType, onNewReading }: TarotTableProp
     (ids: string[]): Record<string, CardPosition> => {
       const count = ids.length;
       const positions: Record<string, CardPosition> = {};
-      const radius = Math.min(size.width, size.height) * 0.28;
+      const radius = Math.min(size.width, size.height) * 0.22;
       ids.forEach((id, i) => {
         const angle = -60 + (120 / (count - 1 || 1)) * i;
         const rad = angle * (Math.PI / 180);
         positions[id] = {
-          x: centerX + radius * Math.sin(rad) - 80,
-          y: centerY - radius * Math.cos(rad) - 120,
+          x: centerX + radius * Math.sin(rad) - 70,
+          y: centerY - radius * Math.cos(rad) - 100,
           rotate: angle * 0.6,
           scale: 1,
           opacity: 1,
@@ -106,10 +106,10 @@ export default function TarotTable({ readingType, onNewReading }: TarotTableProp
   );
 
   const randomPosition = useCallback((): CardPosition => {
-    const x = Math.random() * Math.max(10, size.width - 170);
-    const y = Math.random() * Math.max(10, size.height - 250);
-    const rotate = (Math.random() - 0.5) * 80;
-    const scale = 0.85 + Math.random() * 0.2;
+    const x = Math.random() * Math.max(10, size.width - 150);
+    const y = Math.random() * Math.max(10, size.height - 200);
+    const rotate = (Math.random() - 0.5) * 60;
+    const scale = 0.8 + Math.random() * 0.2;
     return { x, y, rotate, scale, opacity: 1, filter: "none" };
   }, [size]);
 
@@ -317,12 +317,12 @@ export default function TarotTable({ readingType, onNewReading }: TarotTableProp
       {/* Card arena */}
       <div ref={containerRef} className="relative z-20 w-full h-full flex flex-col items-center justify-center p-4">
         <div
-          className="relative w-full h-full"
-          style={{
-            background:
-              "radial-gradient(ellipse at center, rgba(26,10,62,0.35) 0%, rgba(6,6,15,0.95) 100%)",
-          }}
-        >
+        className="relative w-full h-full"
+        style={{
+          background:
+            "radial-gradient(ellipse at center, rgba(26,10,62,0.35) 0%, rgba(6,6,15,0.95) 100%)",
+        }}
+      >
           <AnimatePresence mode="popLayout">
             {visibleCardIds.map((cardId, i) => {
               const card = getCardById(cardId);
@@ -377,7 +377,7 @@ export default function TarotTable({ readingType, onNewReading }: TarotTableProp
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            <div className="glass p-8 rounded-2xl max-w-md w-full text-center">
+            <div className="glass p-5 sm:p-6 rounded-xl sm:rounded-2xl max-w-sm sm:max-w-md w-full text-center">
               <h2 className="font-serif-display text-3xl text-warmwhite mb-2">Velora</h2>
               <p className="text-gold-300 text-sm tracking-widest uppercase mb-6">{getReadingTypeLabel(readingType)} Reading</p>
               <label className="block text-moonlight text-sm mb-3 tracking-wider" htmlFor="question-input">
@@ -469,7 +469,7 @@ export default function TarotTable({ readingType, onNewReading }: TarotTableProp
                 return (
                   <motion.div
                     key={c.cardId}
-                    className="w-40 h-60 md:w-48 md:h-72"
+                    className="w-40 h-60 sm:w-44 sm:h-64 md:w-48 md:h-72"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 + i * 0.15, duration: 0.5 }}
@@ -555,7 +555,7 @@ function ReadingDetails({
 
   return (
     <motion.div
-      className="glass p-6 rounded-xl"
+      className="glass p-4 sm:p-5 rounded-xl"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.15 + 0.5, duration: 0.5 }}

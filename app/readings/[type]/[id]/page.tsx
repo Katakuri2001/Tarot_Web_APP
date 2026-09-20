@@ -52,7 +52,7 @@ export default function ReadingResultPage() {
 
   if (notFound) {
     return (
-      <div className="min-h-screen flex items-center justify-center pt-24 px-4">
+      <div className="min-h-screen flex items-center justify-center pt-16 sm:pt-20 px-4">
         <div className="text-center">
           <p className="text-moonlight mb-4">Reading not found. Please start a new reading.</p>
           <button onClick={() => router.push("/readings")} className="px-6 py-3 rounded-full border border-gold-400/30 text-gold-300 text-sm tracking-wider hover:border-gold-400/60 transition-all">
@@ -65,7 +65,7 @@ export default function ReadingResultPage() {
 
   if (!cards) {
     return (
-      <div className="min-h-screen flex items-center justify-center pt-24 px-4">
+      <div className="min-h-screen flex items-center justify-center pt-16 sm:pt-20 px-4">
         <div className="text-center">
           <p className="text-moonlight mb-4">Loading your reading...</p>
           <button onClick={() => router.push("/readings")} className="text-gold-300 text-sm tracking-wider">
@@ -102,7 +102,7 @@ export default function ReadingResultPage() {
       <StarBackground />
       <Navigation />
 
-      <main className="relative z-10 min-h-screen pt-24 px-4 pb-24">
+      <main className="relative z-10 min-h-screen pt-16 sm:pt-20 px-4 pb-16 safe-top safe-bottom">
         <div className="max-w-5xl mx-auto">
           <motion.div
             className="text-center mb-12"
@@ -113,7 +113,7 @@ export default function ReadingResultPage() {
             <p className="text-coolgray text-sm">{dateStr}</p>
           </motion.div>
 
-          <div className="flex flex-wrap justify-center gap-6 md:gap-8 mb-16">
+          <div className="flex flex-wrap justify-center gap-3 md:gap-6 mb-12">
             {cards.cards.map((card, i) => {
               const cardData = getCardById(card.cardId);
               if (!cardData) return null;
@@ -122,7 +122,7 @@ export default function ReadingResultPage() {
               return (
                 <motion.div
                   key={i}
-                  className="w-44 md:w-52"
+                  className="w-36 md:w-44"
                   initial={{ opacity: 0, y: 40 }}
                   animate={isRevealed ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
                   transition={reducedMotion ? { duration: 0.3 } : { duration: 0.6, delay: i * 0.2 }}
@@ -177,14 +177,14 @@ export default function ReadingResultPage() {
               <h2 className="font-serif-display text-2xl text-warmwhite text-center mb-8" style={{ fontWeight: 400 }}>
                 Your Reading
               </h2>
-              <div className="grid gap-6">
+              <div className="grid gap-4">
                 {cards.cards.map((card, i) => {
                   const cardData = getCardById(card.cardId);
                   if (!cardData) return null;
                   const interpretation = getCardInterpretation(cardData, card.orientation as Orientation, cards.readingType);
 
                   return (
-                    <div key={i} className="glass p-6 rounded-xl">
+                    <div key={i} className="glass p-4 sm:p-5 rounded-xl">
                       <h3 className="font-serif-display text-lg text-gold-300 mb-2">
                         {cardData.name} {card.orientation === "reversed" ? "(Reversed)" : ""}
                       </h3>
@@ -215,7 +215,7 @@ export default function ReadingResultPage() {
                 })}
               </div>
 
-              <div className="mt-8 glass p-6 rounded-xl">
+              <div className="glass p-5 sm:p-6 rounded-xl">
                 <h3 className="font-serif-display text-lg text-gold-300 mb-3">Reading Summary</h3>
                 <p className="text-moonlight text-sm leading-relaxed">
                   Your {cards.category.toLowerCase()} reading reveals {cards.cards.length}

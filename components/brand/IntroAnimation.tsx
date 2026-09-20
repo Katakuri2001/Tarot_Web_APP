@@ -177,7 +177,7 @@ export default function IntroAnimation({ onComplete }: IntroAnimationProps) {
             transition={{ duration: 0.8 }}
           >
             <div
-              className="w-72 h-72 rounded-full"
+              className="w-48 h-48 sm:w-56 sm:h-56 md:w-72 md:h-72 rounded-full"
               style={{
                 background: "radial-gradient(circle, rgba(212,184,90,0.1) 0%, rgba(26,10,62,0.05) 50%, transparent 70%)",
               }}

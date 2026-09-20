@@ -58,7 +58,7 @@ export default function ExplorerPage() {
               <button
                 key={f.value}
                 onClick={() => { setActiveFilter(f.value); setSearchQuery(""); }}
-                className={`px-4 py-1.5 rounded-full text-xs tracking-wider transition-all duration-300 ${
+                className={`px-3 py-2 rounded-full text-xs tracking-wider transition-all duration-300 min-h-[44px] min-w-[44px] flex items-center justify-center ${
                   activeFilter === f.value
                     ? "bg-gold-400/20 text-gold-300 border border-gold-400/30"
                     : "text-coolgray border border-transparent hover:text-moonlight"
@@ -76,13 +76,13 @@ export default function ExplorerPage() {
               value={searchQuery}
               onChange={(e) => { setSearchQuery(e.target.value); setActiveFilter("all"); }}
               placeholder="Search cards by name or keyword..."
-              className="w-full max-w-md bg-midnight/50 border border-gold-400/10 rounded-full px-6 py-2 text-sm text-warmwhite placeholder:text-muted focus:outline-none focus:border-gold-400/30 transition-colors"
+              className="w-full max-w-sm bg-midnight/50 border border-gold-400/10 rounded-full px-5 py-2.5 text-sm text-warmwhite placeholder:text-muted focus:outline-none focus:border-gold-400/30 transition-colors"
               aria-label="Search tarot cards"
             />
           </div>
 
           {/* Cards grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 md:gap-3">
             <AnimatePresence mode="popLayout">
               {displayCards.map((card, i) => (
                 <motion.button

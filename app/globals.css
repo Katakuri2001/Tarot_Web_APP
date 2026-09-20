@@ -197,6 +197,27 @@ body {
   background: rgba(212, 184, 90, 0.35);
 }
 
+/* Touch & Mobile */
+html {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Safe Areas */
+@supports (padding: env(safe-area-inset-top)) {
+  .safe-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
 /* Noise Texture */
 .noise::before {
   content: "";
@@ -217,6 +238,22 @@ body {
     animation-iteration-count: 1;
     scroll-behavior: auto;
     transition-duration: 0.01ms;
+  }
+}
+
+/* Mobile overrides */
+@media (max-width: 640px) {
+  .text-display {
+    font-size: clamp(2rem, 8vw, 3rem);
+  }
+  .text-hero {
+    font-size: clamp(1.5rem, 6vw, 2.5rem);
+  }
+  .text-section-title {
+    font-size: clamp(1.25rem, 4vw, 1.5rem);
+  }
+  .card-surface {
+    @apply p-4 rounded-lg;
   }
 }
 

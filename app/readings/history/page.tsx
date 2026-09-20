@@ -25,7 +25,7 @@ export default function MyReadingsPage() {
       <StarBackground />
       <Navigation />
 
-      <main className="relative z-10 min-h-screen pt-24 px-4 pb-24">
+      <main className="relative z-10 min-h-screen pt-16 sm:pt-20 px-4 pb-16 safe-top safe-bottom">
         <div className="max-w-3xl mx-auto">
           <motion.div
             className="text-center mb-12"

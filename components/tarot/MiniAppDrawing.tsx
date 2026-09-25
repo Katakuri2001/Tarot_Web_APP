@@ -16,7 +16,6 @@ import {
 } from "@/utils/tarotUtils";
 import { saveReadingToStorage } from "@/services/readingService";
 import MiniAppCard from "@/components/tarot/MiniAppCard";
-import { getReadingTypePositions as getPositions } from "@/utils/tarotUtils";
 import type { ReadingType, Orientation } from "@/data/types";
 
 const READING_TYPES: { type: ReadingType; label: string; icon: string; count: number }[] = [
@@ -87,6 +86,8 @@ export default function MiniAppDrawing({ initialType = "daily" }: Props) {
           y: height * 0.4 + radius * Math.cos(rad) - 80,
           rotate: angle * 0.5,
           scale: 1,
+          opacity: 1,
+          filter: "none",
         };
       });
       return result;
@@ -102,6 +103,8 @@ export default function MiniAppDrawing({ initialType = "daily" }: Props) {
       y: Math.random() * Math.max(10, height - 180),
       rotate: (Math.random() - 0.5) * 50,
       scale: 0.8 + Math.random() * 0.2,
+      opacity: 1,
+      filter: "none",
     };
   }, [getContainerSize]);
 
@@ -157,10 +160,6 @@ export default function MiniAppDrawing({ initialType = "daily" }: Props) {
       const positions_list = getReadingTypePositions(readingType);
       const position = positions_list[currentStep]?.position || "past";
 
-      // Check if this card is in recent cards
-      const isRecent = recentCardIds.includes(id);
-      // We still allow it but track it
-
       // Add to recent cards
       setRecentCardIds((prev) => {
         const filtered = prev.filter((rid) => rid !== id);
@@ -180,7 +179,7 @@ export default function MiniAppDrawing({ initialType = "daily" }: Props) {
           if (key === id) {
             next[key] = { x: width / 2 - 60, y: height * 0.35 - 80, rotate: 0, scale: 1.15 };
           } else {
-            next[key] = { ...next[key], scale: 0.7, opacity: 0.15 as any, filter: "blur(4px) brightness(0.4)" as any };
+            next[key] = { ...next[key], scale: 0.7, opacity: 0.15, filter: "blur(4px) brightness(0.4)" };
           }
         });
         return next;
@@ -199,21 +198,25 @@ export default function MiniAppDrawing({ initialType = "daily" }: Props) {
           sound?.shuffle();
 
           // Prepare next card draw
-          const availableIds = tarotCards
-            .map((c) => c.id)
-            .filter((id) => !selectedCards.find((sc) => sc.cardId === id));
-          const nextVisible = shuffleArray(availableIds).slice(0, NUM_VISIBLE);
-          setVisibleCardIds(nextVisible);
-          setPositions(computePositions(nextVisible));
-          setPhase("selecting");
-          setSelectedCardId(null);
+          setSelectedCards((prev) => {
+            const selectedIds = prev.map((sc) => sc.cardId);
+            const availableIds = tarotCards
+              .map((c) => c.id)
+              .filter((id) => !selectedIds.includes(id));
+            const nextVisible = shuffleArray(availableIds).slice(0, NUM_VISIBLE);
+            setVisibleCardIds(nextVisible);
+            setPositions(computePositions(nextVisible));
+            setPhase("selecting");
+            setSelectedCardId(null);
+            return prev;
+          });
         }
       }, reducedMotion ? 400 : 800);
     },
-    [phase, selectedCardId, readingType, currentStep, numCards, recentCardIds, selectedCards, getContainerSize, sound]
+    [phase, selectedCardId, readingType, currentStep, numCards, recentCardIds, getContainerSize, sound]
   );
 
-  // Draw again
+  // Draw again — reset to shuffling for proper reroll experience
   const drawAgain = useCallback(() => {
     setResultTransitioning(false);
     setShowResult(false);
@@ -221,6 +224,7 @@ export default function MiniAppDrawing({ initialType = "daily" }: Props) {
     setCurrentStep(0);
     setSelectedCardId(null);
     setRecentCardIds([]);
+    setPhase("shuffling");
 
     timerRef.current = window.setTimeout(() => {
       const allIds = tarotCards.map((c) => c.id);
@@ -228,10 +232,27 @@ export default function MiniAppDrawing({ initialType = "daily" }: Props) {
       const visible = shuffleArray(shuffled).slice(0, NUM_VISIBLE);
       setVisibleCardIds(visible);
       setPositions(computePositions(visible));
-      setPhase("selecting");
       sound?.shuffle();
+
+      // Shuffle animation
+      const interval = window.setInterval(() => {
+        setPositions((prev) => {
+          const next = { ...prev };
+          Object.keys(next).forEach((id) => {
+            next[id] = { ...next[id], ...randomPosition() };
+          });
+          return next;
+        });
+      }, reducedMotion ? 80 : 120);
+
+      const duration = reducedMotion ? 1200 : 2500;
+      timerRef.current = window.setTimeout(() => {
+        clearInterval(interval);
+        setPositions((prev) => computePositions(Object.keys(prev)));
+        setPhase("selecting");
+      }, duration);
     }, reducedMotion ? 300 : 500);
-  }, [computePositions, sound, reducedMotion]);
+  }, [computePositions, randomPosition, sound, reducedMotion]);
 
   // Auto-start shuffling when initialType is provided (for direct Mini App links)
   useEffect(() => {
@@ -371,7 +392,7 @@ export default function MiniAppDrawing({ initialType = "daily" }: Props) {
               const card = getCardById(cardId);
               if (!card) return null;
               const state = getCardState(cardId);
-              const pos = positions[cardId] || { x: 100, y: 100, rotate: 0, scale: 1 };
+              const pos = positions[cardId] || { x: 100, y: 100, rotate: 0, scale: 1, opacity: 1, filter: "none" };
               return (
                 <MiniAppCard
                   key={cardId}

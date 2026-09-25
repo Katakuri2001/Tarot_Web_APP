@@ -3,45 +3,12 @@
 import { motion } from "framer-motion";
 import StarBackground from "@/components/StarBackground";
 import Navigation from "@/components/Navigation";
-import ReadingTypeCard from "@/components/reading/ReadingTypeCard";
-import { Heart, Sparkles, Briefcase, Compass } from "lucide-react";
-
-const readingTypes = [
-  {
-    href: "/readings/daily",
-    title: "Daily Reading",
-    description: "A single card reveals the energy surrounding your day. What awaits you?",
-    icon: Sparkles,
-    count: 1,
-    color: "#d4b85a",
-  },
-  {
-    href: "/readings/love",
-    title: "Love Reading",
-    description: "Past, present, and future. Three cards illuminate your romantic journey.",
-    icon: Heart,
-    count: 3,
-    color: "#e06c9f",
-  },
-  {
-    href: "/readings/career",
-    title: "Career Reading",
-    description: "Your situation, the challenge ahead, and the advice the cards offer.",
-    icon: Briefcase,
-    count: 3,
-    color: "#5b9bd5",
-  },
-  {
-    href: "/readings/general",
-    title: "General Reading",
-    description: "Past, present, and future through a broader lens of your life.",
-    icon: Compass,
-    count: 3,
-    color: "#a78bfa",
-  },
-];
+import MiniAppDrawing from "@/components/tarot/MiniAppDrawing";
+import { useSoundEnabled } from "@/hooks/useShared";
 
 export default function ReadingsPage() {
+  const [soundEnabled] = useSoundEnabled();
+
   return (
     <>
       <StarBackground />
@@ -64,9 +31,43 @@ export default function ReadingsPage() {
             </p>
           </motion.div>
 
+          {/* Mini App Drawing Preview */}
+          <div className="glass rounded-2xl p-6 sm:p-8 mb-8 max-w-2xl mx-auto">
+            <h2 className="font-serif-display text-xl text-warmwhite text-center mb-4" style={{ fontWeight: 400 }}>
+              Quick Draw
+            </h2>
+            <p className="text-moonlight text-sm text-center mb-6">
+              Start a reading instantly from this page. Tap a card type below.
+            </p>
+            <MiniAppDrawing />
+          </div>
+
+          {/* Reading type cards */}
           <div className="grid md:grid-cols-2 gap-6">
-            {readingTypes.map((type, i) => (
-              <ReadingTypeCard key={type.href} {...type} />
+            {[
+              { href: "/readings/daily", title: "Daily Reading", desc: "One card for today's energy", icon: "☀" },
+              { href: "/readings/love", title: "Love Reading", desc: "Three cards of the heart", icon: "♥" },
+              { href: "/readings/career", title: "Career Reading", desc: "Path through professional storms", icon: "⚡" },
+              { href: "/readings/general", title: "General Reading", desc: "Three perspectives on your life", icon: "✦" },
+            ].map((type, i) => (
+              <motion.a
+                key={type.href}
+                href={type.href}
+                className="group block p-6 rounded-xl border border-gold-400/10 bg-midnight/50 hover:border-gold-400/30 transition-all duration-500"
+                whileHover={!false ? { y: -6 } : {}}
+                transition={{ duration: 0.4 }}
+              >
+                <div className="flex items-start gap-3">
+                  <span className="text-xl mt-0.5">{type.icon}</span>
+                  <div>
+                    <h3 className="font-serif-display text-xl text-warmwhite mb-2" style={{ fontWeight: 500 }}>{type.title}</h3>
+                    <p className="text-coolgray text-sm leading-relaxed">{type.desc}</p>
+                    <span className="text-xs tracking-wider uppercase text-gold-300/60 mt-2 block">
+                      {type.href === "/readings/daily" ? "1-card" : "3-card"} reading
+                    </span>
+                  </div>
+                </div>
+              </motion.a>
             ))}
           </div>
         </div>

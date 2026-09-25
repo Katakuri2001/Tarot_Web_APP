@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import IntroAnimation from "@/components/brand/IntroAnimation";
 import StarBackground from "@/components/StarBackground";
 import Navigation from "@/components/Navigation";
+import MiniAppDrawing from "@/components/tarot/MiniAppDrawing";
 import { hasIntroPlayed } from "@/services/readingService";
 
 export default function HomePage() {
@@ -178,6 +179,16 @@ export default function HomePage() {
                   </div>
                 </motion.a>
               ))}
+            </div>
+
+            {/* Mini App Quick Draw */}
+            <div className="mt-12 max-w-2xl mx-auto w-full">
+              <h3 className="font-serif-display text-xl text-gold-300 text-center mb-4" style={{ fontWeight: 400 }}>
+                Quick Draw
+              </h3>
+              <div className="glass rounded-xl p-4 sm:p-6 overflow-hidden" style={{ maxHeight: "400px", overflowY: "auto" }}>
+                <MiniAppDrawing />
+              </div>
             </div>
           </div>
         </section>

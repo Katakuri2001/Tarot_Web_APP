@@ -66,12 +66,10 @@ export default function Navigation() {
           aria-label={mobileOpen ? "Close menu" : "Open menu"}
           aria-expanded={mobileOpen}
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-            {mobileOpen ? (
-              <path d="M6 6l12 12M6 18L18 6" />
-            ) : (
-              <path d="M4 6h16M4 12h16M4 18h16" />
-            )}
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+            {/* Always render both paths, use CSS to show/hide */}
+            <path d="M4 6h16M4 12h16M4 18h16" className={mobileOpen ? "hidden" : "block"} />
+            <path d="M6 6l12 12M6 18L18 6" className={mobileOpen ? "block" : "hidden"} />
           </svg>
         </button>
       </div>

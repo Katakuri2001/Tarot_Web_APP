@@ -181,15 +181,119 @@ export default function HomePage() {
               ))}
             </div>
 
-            {/* Mini App Quick Draw */}
-            <div className="mt-12 max-w-2xl mx-auto w-full">
-              <h3 className="font-serif-display text-xl text-gold-300 text-center mb-4" style={{ fontWeight: 400 }}>
-                Quick Draw
-              </h3>
-              <div className="glass rounded-xl p-4 sm:p-6 overflow-hidden" style={{ maxHeight: "400px", overflowY: "auto" }}>
-                <MiniAppDrawing />
+            {/* Mini App Quick Draw — live mobile preview */}
+            <motion.div
+              className="mt-20 w-full"
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.15 }}
+              transition={{ duration: 0.7 }}
+            >
+              <div className="text-center mb-10">
+                <p className="text-caption tracking-widest uppercase text-gold-300/60 mb-3">
+                  The Mini App
+                </p>
+                <h3
+                  className="font-serif-display text-2xl md:text-3xl text-warmwhite mb-3"
+                  style={{ fontWeight: 300 }}
+                >
+                  Quick Draw
+                </h3>
+                <p className="text-coolgray text-sm max-w-xl mx-auto">
+                  The full drawing experience, rendered live at real mobile
+                  dimensions. Tap a card to draw it.
+                </p>
               </div>
-            </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-10 lg:gap-16 items-center max-w-5xl mx-auto">
+                {/* Phone frame — true 390px mobile width */}
+                <div className="flex justify-center">
+                  <div className="relative w-full max-w-[390px]">
+                    {/* Glow */}
+                    <div
+                      className="absolute -inset-8 rounded-[3rem] opacity-40 blur-2xl pointer-events-none"
+                      style={{
+                        background:
+                          "radial-gradient(circle at 50% 40%, rgba(212,184,90,0.18) 0%, rgba(26,10,62,0.25) 45%, transparent 70%)",
+                      }}
+                    />
+
+                    <div
+                      className="relative w-full rounded-[2.25rem] border border-gold-400/25 bg-deepnight overflow-hidden shadow-2xl"
+                      style={{
+                        height: "min(844px, 78vh)",
+                        boxShadow:
+                          "0 0 0 8px #0a0a1a, 0 0 0 9px rgba(212,184,90,0.18), 0 30px 80px rgba(0,0,0,0.7)",
+                      }}
+                    >
+                      {/* Notch */}
+                      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-6 bg-[#0a0a1a] rounded-b-2xl z-40 flex items-center justify-center">
+                        <div className="w-14 h-1 rounded-full bg-white/10" />
+                      </div>
+
+                      <div className="absolute inset-0 top-6">
+                        <MiniAppDrawing embedded />
+                      </div>
+
+                      {/* Home indicator */}
+                      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-28 h-1 rounded-full bg-white/15 z-40 pointer-events-none" />
+                    </div>
+
+                    {/* Caption */}
+                    <p className="text-center text-muted text-xs mt-4">
+                      390 × 844 · iPhone 14 viewport
+                    </p>
+                  </div>
+                </div>
+
+                {/* Mobile view grid of the flow */}
+                <div>
+                  <h4 className="font-serif-display text-lg text-gold-300 mb-5" style={{ fontWeight: 400 }}>
+                    The Ritual
+                  </h4>
+
+                  <div className="grid grid-cols-2 gap-3 mb-8">
+                    {[
+                      { step: "01", title: "Choose", desc: "Daily, Love, Career, General" },
+                      { step: "02", title: "Shuffle", desc: "The deck rearranges itself" },
+                      { step: "03", title: "Select", desc: "Your card rises to centre" },
+                      { step: "04", title: "Reveal", desc: "Flip, then the reading unfolds" },
+                      { step: "05", title: "Reroll", desc: "Recent cards are avoided" },
+                      { step: "06", title: "Save", desc: "Stored in your history" },
+                    ].map((s) => (
+                      <div key={s.step} className="card-surface">
+                        <span className="text-gold-300/50 font-serif-display text-xs tracking-widest">
+                          {s.step}
+                        </span>
+                        <h5 className="font-serif-display text-warmwhite text-base mt-1">{s.title}</h5>
+                        <p className="text-coolgray text-xs mt-0.5">{s.desc}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex flex-wrap gap-3">
+                    <a
+                      href="/mini-app"
+                      className="px-7 py-3 rounded-full bg-gold-400 text-midnight font-medium tracking-wider text-sm hover:bg-gold-300 transition-colors duration-300 inline-flex items-center gap-2 min-h-[44px]"
+                    >
+                      Open Full Mini App
+                      <span aria-hidden="true">→</span>
+                    </a>
+                    <a
+                      href="/readings/general"
+                      className="px-7 py-3 rounded-full border border-gold-400/30 text-gold-300 text-sm tracking-wider hover:border-gold-400/60 hover:bg-gold-400/5 transition-all duration-300 inline-flex items-center min-h-[44px]"
+                    >
+                      3-Card Reading
+                    </a>
+                  </div>
+
+                  <p className="text-muted text-xs mt-5">
+                    Everything above runs in the browser — no account, no
+                    download.
+                  </p>
+                </div>
+              </div>
+            </motion.div>
           </div>
         </section>
 

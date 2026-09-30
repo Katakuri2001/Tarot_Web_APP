@@ -38,9 +38,15 @@ interface CardPosition {
 
 interface Props {
   initialType?: ReadingType;
+  /**
+   * When true the component fills its parent instead of the whole viewport.
+   * Used by the homepage "Quick Draw" phone preview so the mini app can be
+   * inspected at real mobile dimensions without covering the page.
+   */
+  embedded?: boolean;
 }
 
-export default function MiniAppDrawing({ initialType = "daily" }: Props) {
+export default function MiniAppDrawing({ initialType = "daily", embedded = false }: Props) {
   const reducedMotion = useReducedMotion();
   const [soundEnabled] = useSoundEnabled();
   const sound = useSound(soundEnabled);
@@ -296,6 +302,40 @@ export default function MiniAppDrawing({ initialType = "daily" }: Props) {
     };
   }, []);
 
+  // Recompute the spread when the container changes size (e.g. the embedded
+  // phone preview is responsive). Skipped while a draw is in flight so the
+  // choreography is never interrupted mid-animation.
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+
+    let lastWidth = el.offsetWidth;
+    let lastHeight = el.offsetHeight;
+
+    const observer = new ResizeObserver(() => {
+      const { offsetWidth, offsetHeight } = el;
+      if (offsetWidth === lastWidth && offsetHeight === lastHeight) return;
+      lastWidth = offsetWidth;
+      lastHeight = offsetHeight;
+
+      if (phase === "revealing" || phase === "result" || showResult) return;
+
+      setPositions((prev) => {
+        const ids = Object.keys(prev);
+        if (ids.length === 0) return prev;
+        const fresh = computePositions(ids);
+        const next: Record<string, CardPosition> = {};
+        ids.forEach((id) => {
+          next[id] = { ...fresh[id], opacity: prev[id].opacity, filter: prev[id].filter };
+        });
+        return next;
+      });
+    });
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [computePositions, phase, showResult]);
+
   const getCardState = (cardId: string): "idle" | "selected" | "dimmed" | "revealed" => {
     if (phase === "revealing" || phase === "result") return "revealed";
     if (phase === "selecting") return cardId === selectedCardId ? "selected" : "idle";
@@ -305,23 +345,33 @@ export default function MiniAppDrawing({ initialType = "daily" }: Props) {
   const isClickable = phase === "selecting" && !selectedCardId;
 
   return (
-    <div className="fixed inset-0 bg-deepnight flex flex-col overflow-hidden">
+    <div
+      className={
+        embedded
+          ? "relative w-full h-full bg-deepnight flex flex-col overflow-hidden"
+          : "fixed inset-0 bg-deepnight flex flex-col overflow-hidden"
+      }
+    >
       {/* Header */}
       <motion.header
-        className="flex items-center justify-between px-4 py-3 z-20"
+        className="flex items-center justify-between px-4 py-3 z-20 shrink-0"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <button
-          onClick={() => router.push("/")}
-          className="text-moonlight hover:text-gold-300 transition-colors p-2 -ml-2"
-          aria-label="Go back"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M19 12H5M12 19l-7-7 7-7" />
-          </svg>
-        </button>
+        {embedded ? (
+          <div className="w-8" />
+        ) : (
+          <button
+            onClick={() => router.push("/")}
+            className="text-moonlight hover:text-gold-300 transition-colors p-2 -ml-2"
+            aria-label="Go back"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M19 12H5M12 19l-7-7 7-7" />
+            </svg>
+          </button>
+        )}
         <div className="flex items-center gap-2">
           <span className="font-serif-display text-lg text-warmwhite">Velora</span>
           <span className="text-gold-300 text-xs tracking-widest">✦</span>
@@ -380,7 +430,7 @@ export default function MiniAppDrawing({ initialType = "daily" }: Props) {
       </AnimatePresence>
 
       {/* Card Drawing Arena */}
-      <div ref={containerRef} className="flex-1 relative z-10">
+      <div ref={containerRef} className="flex-1 relative z-10 min-h-0">
         <div
           className="absolute inset-0 flex flex-col items-center justify-center p-4"
           style={{

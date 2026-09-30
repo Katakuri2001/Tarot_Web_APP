@@ -1,14 +1,13 @@
 "use client";
 
 import { motion } from "framer-motion";
-import PhoneFrame, { PREVIEW_DEVICE } from "@/components/PhoneFrame";
+import RetroPhone from "@/components/RetroPhone";
+import { PREVIEW_DEVICE } from "@/components/PhoneFrame";
 
 interface PreviewRoute {
   path: string;
   title: string;
   note: string;
-  /** Deep-link straight into a state, so previews show content, not a picker. */
-  hash?: string;
 }
 
 const ROUTES: PreviewRoute[] = [
@@ -20,9 +19,9 @@ const ROUTES: PreviewRoute[] = [
 ];
 
 /**
- * Mobile preview of the wider site. Each frame loads a real route in an iframe
- * sized to one device width, so every page can be checked at mobile
- * dimensions without opening a device or resizing a window.
+ * Mobile preview of the wider site. Every frame loads a real route in an
+ * iframe laid out at true device width and scaled to fit the shell, so each
+ * page is checked against the mobile layout a phone would actually get.
  *
  * Frames are lazily mounted and only once they scroll into view, so the page
  * does not boot five copies of the app on load.
@@ -38,48 +37,46 @@ export default function MobilePreviewGrid() {
       viewport={{ once: true, amount: 0.05 }}
       transition={{ duration: 0.7 }}
     >
-      <div className="text-center mb-10">
+      <div className="text-center mb-12">
         <p className="text-caption tracking-widest uppercase text-gold-300/60 mb-3">
           Every Screen
         </p>
-        <h3 className="font-serif-display text-2xl md:text-3xl text-warmwhite mb-3" style={{ fontWeight: 300 }}>
+        <h3
+          className="font-serif-display text-2xl md:text-3xl text-warmwhite mb-3"
+          style={{ fontWeight: 300 }}
+        >
           The Whole Site In Mobile View
         </h3>
         <p className="text-coolgray text-sm max-w-xl mx-auto">
-          Each frame below is a real page at {d.width}px wide — the same
-          width a phone reports. Scroll them, tap them, they are live.
+          Each frame is a real page rendered at {d.width} × {d.height} and scaled
+          to fit. Scroll them, tap them — they are live.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-x-8 gap-y-12 max-w-6xl mx-auto">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-8 gap-y-10 max-w-5xl mx-auto justify-items-center">
         {ROUTES.map((route) => (
-          <div key={route.path} className="flex flex-col items-center">
-            <PhoneFrame
-              caption={null}
-              maxHeight="64vh"
-              glow={false}
-            >
-              <iframe
-                src={route.path}
-                title={`${route.title} — mobile preview`}
-                loading="lazy"
-                scrolling="yes"
-                className="h-full w-full border-0 bg-deepnight"
-                // The frame is decorative navigation-free chrome; the real page
-                // inside is fully interactive.
-              />
-            </PhoneFrame>
-
-            <div className="text-center mt-5 px-2">
-              <a
-                href={route.path}
-                className="font-serif-display text-lg text-warmwhite hover:text-gold-300 transition-colors"
-              >
-                {route.title}
-              </a>
-              <p className="text-muted text-xs mt-0.5">{route.note}</p>
-            </div>
-          </div>
+          <RetroPhone
+            key={route.path}
+            caption={
+              <>
+                <a
+                  href={route.path}
+                  className="font-serif-display text-base text-warmwhite hover:text-gold-300 transition-colors"
+                >
+                  {route.title}
+                </a>
+                <p className="text-muted text-[11px] mt-0.5">{route.note}</p>
+              </>
+            }
+          >
+            <iframe
+              src={route.path}
+              title={`${route.title} — mobile preview`}
+              loading="lazy"
+              scrolling="yes"
+              className="h-full w-full border-0 bg-deepnight"
+            />
+          </RetroPhone>
         ))}
       </div>
     </motion.div>

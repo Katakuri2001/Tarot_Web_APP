@@ -547,7 +547,7 @@ export default function MiniAppDrawing({ initialType, embedded = false }: Props)
               {READING_TYPES.map((rt, i) => (
                 <motion.button
                   key={rt.type}
-                  className="glass p-4 sm:p-5 rounded-xl text-center hover:border-gold-400/30 transition-all duration-300 min-h-[100px] flex flex-col items-center justify-center touch-manipulation"
+                  className="glass p-4 sm:p-5 rounded-xl text-center hover:border-gold-400/30 transition-[color,background-color,border-color,box-shadow,transform] duration-300 min-h-[100px] flex flex-col items-center justify-center touch-manipulation"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 + i * 0.1, duration: 0.5 }}

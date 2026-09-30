@@ -42,10 +42,14 @@ type CardSize = "sm" | "md" | "lg";
  *  regardless of how many cards are in it. */
 const DECK_SIZE: CardSize = "lg";
 
-/** How far the shuffle may wander, as a fraction of the room to each edge.
- *  Kept low so the riffle reads as the deck shuffling in place at the centre. */
-const SHUFFLE_SPREAD_X = 0.34;
-const SHUFFLE_SPREAD_Y = 0.22;
+/** Shuffle motion. Each card travels from the top of the stack to the bottom
+ *  and re-enters at the top, with every card offset by an even slice of the
+ *  cycle. That stagger is what makes it read as a real shuffle — a stream of
+ *  cards cascading down — instead of every card jittering in place. */
+const SHUFFLE_TRAVEL = 88;
+const SHUFFLE_SPEED = 0.085;
+const SHUFFLE_X_JITTER = 7;
+const SHUFFLE_ROT_JITTER = 5;
 
 /** Per-card offset that builds the deck. Two to three pixels per card reads as
  *  a stack with visible depth while still looking like one squared deck. */
@@ -87,6 +91,10 @@ export default function MiniAppDrawing({ initialType, embedded = false }: Props)
   const [soundEnabled] = useSoundEnabled();
   const sound = useSound(soundEnabled);
   const router = useRouter();
+
+  // Monotonic clock for the shuffle cascade. Kept in a ref so the interval can
+  // advance it without re-creating itself every tick.
+  const shuffleTickRef = useRef(0);
 
   const [phase, setPhase] = useState<"type-select" | "shuffling" | "spread" | "selecting" | "revealing" | "result">(initialType ? "shuffling" : "type-select");
   const [readingType, setReadingType] = useState<ReadingType>(initialType || "daily");
@@ -151,36 +159,50 @@ export default function MiniAppDrawing({ initialType, embedded = false }: Props)
   );
 
   // A single random position for the shuffle. Cards riffle around the centre
-  // of the arena instead of scattering from the top-left corner.
-  const randomPosition = useCallback(
-    (size: CardSize = DECK_SIZE): CardPosition => {
+  // Shuffle positions for the whole deck at one point in time.
+  //
+  // Every card sits at its own phase of a single top-to-bottom loop, evenly
+  // spaced across the cycle. The result is a continuous cascade: one card
+  // leaving the top of the stack as another settles at the bottom. Motion is
+  // driven by the tick rather than by Math.random, so a card always advances
+  // instead of hopping back to where it started.
+  const computeShufflePositions = useCallback(
+    (ids: string[], tick: number, size: CardSize = DECK_SIZE): Record<string, CardPosition> => {
       const { width, height } = getContainerSize();
-      const { w: cardW, h: cardH } = CARD_DIMENSIONS[size];
       const cx = width / 2;
       const cy = height / 2;
+      const count = ids.length || 1;
 
-      // Riffle within a tight box around the centre. The range is a fraction of
-      // the space to the edges, so the deck visibly shuffles *in place* at the
-      // middle of the screen instead of drifting across it.
-      const roomX = Math.max(0, cx - cardW / 2 - 8);
-      const roomY = Math.max(0, cy - cardH / 2 - 8);
-      const rangeX = roomX * SHUFFLE_SPREAD_X;
-      const rangeY = roomY * SHUFFLE_SPREAD_Y;
+      const result: Record<string, CardPosition> = {};
 
-      const { x, y } = centerOf(
-        cx + (Math.random() * 2 - 1) * rangeX,
-        cy + (Math.random() * 2 - 1) * rangeY,
-        size
-      );
+      ids.forEach((id, i) => {
+        // Even slice of the cycle per card, so the deck always looks like a
+        // stream rather than a block moving together.
+        const phase = (tick * SHUFFLE_SPEED + i / count) % 1;
+        // Ease so the card accelerates off the top and settles at the bottom.
+        const eased = phase * phase * (3 - 2 * phase);
 
-      return {
-        x,
-        y,
-        rotate: (Math.random() - 0.5) * 18,
-        scale: 0.94 + Math.random() * 0.1,
-        opacity: 1,
-        filter: "none",
-      };
+        const y = cy - SHUFFLE_TRAVEL / 2 + eased * SHUFFLE_TRAVEL;
+        const { x, y: top } = centerOf(
+          cx + (Math.random() * 2 - 1) * SHUFFLE_X_JITTER,
+          y,
+          size
+        );
+
+        result[id] = {
+          x,
+          y: top,
+          // Slight lean into the direction of travel, plus a little settle.
+          rotate: (Math.random() * 2 - 1) * SHUFFLE_ROT_JITTER + (phase - 0.5) * 3,
+          // Shrink very slightly as it travels down, so cards read as moving
+          // away in depth before they come back to the top.
+          scale: 1 - phase * 0.05,
+          opacity: 1,
+          filter: "none",
+        };
+      });
+
+      return result;
     },
     [getContainerSize]
   );
@@ -221,17 +243,13 @@ export default function MiniAppDrawing({ initialType, embedded = false }: Props)
       sound?.shuffle();
 
       const shuffleSize = DECK_SIZE;
+      shuffleTickRef.current = 0;
 
-      // Shuffle animation
+      // Shuffle animation: a tick-driven cascade rather than random jitter.
       const interval = window.setInterval(() => {
-        setPositions((prev) => {
-          const next = { ...prev };
-          Object.keys(next).forEach((id) => {
-            next[id] = { ...next[id], ...randomPosition(shuffleSize) };
-          });
-          return next;
-        });
-      }, reducedMotion ? 80 : 120);
+        shuffleTickRef.current += 1;
+        setPositions(computeShufflePositions(visible, shuffleTickRef.current, shuffleSize));
+      }, reducedMotion ? 80 : 110);
 
       const duration = reducedMotion ? 1200 : 2500;
       timerRef.current = window.setTimeout(() => {
@@ -240,7 +258,7 @@ export default function MiniAppDrawing({ initialType, embedded = false }: Props)
         setPhase("selecting");
       }, duration);
     },
-    [computePositions, randomPosition, sound, reducedMotion]
+    [computePositions, computeShufflePositions, sound, reducedMotion]
   );
 
   // Select a card
@@ -372,17 +390,13 @@ export default function MiniAppDrawing({ initialType, embedded = false }: Props)
       sound?.shuffle();
 
       const shuffleSize = DECK_SIZE;
+      shuffleTickRef.current = 0;
 
       // Shuffle animation
       const interval = window.setInterval(() => {
-        setPositions((prev) => {
-          const next = { ...prev };
-          Object.keys(next).forEach((id) => {
-            next[id] = { ...next[id], ...randomPosition(shuffleSize) };
-          });
-          return next;
-        });
-      }, reducedMotion ? 80 : 120);
+        shuffleTickRef.current += 1;
+        setPositions(computeShufflePositions(visible, shuffleTickRef.current, shuffleSize));
+      }, reducedMotion ? 80 : 110);
 
       const duration = reducedMotion ? 1200 : 2500;
       timerRef.current = window.setTimeout(() => {
@@ -391,7 +405,7 @@ export default function MiniAppDrawing({ initialType, embedded = false }: Props)
         setPhase("selecting");
       }, duration);
     }, reducedMotion ? 300 : 500);
-  }, [computePositions, randomPosition, sound, reducedMotion]);
+  }, [computePositions, computeShufflePositions, sound, reducedMotion]);
 
   // Auto-start shuffling when initialType is provided (for direct Mini App links)
   useEffect(() => {
@@ -405,16 +419,12 @@ export default function MiniAppDrawing({ initialType, embedded = false }: Props)
       sound?.shuffle();
 
       const shuffleSize = DECK_SIZE;
+      shuffleTickRef.current = 0;
 
       const interval = window.setInterval(() => {
-        setPositions((prev) => {
-          const next = { ...prev };
-          Object.keys(next).forEach((id) => {
-            next[id] = { ...next[id], ...randomPosition(shuffleSize) };
-          });
-          return next;
-        });
-      }, reducedMotion ? 80 : 120);
+        shuffleTickRef.current += 1;
+        setPositions(computeShufflePositions(visible, shuffleTickRef.current, shuffleSize));
+      }, reducedMotion ? 80 : 110);
 
       const duration = reducedMotion ? 1200 : 2500;
       const timeout = window.setTimeout(() => {

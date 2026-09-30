@@ -1,28 +1,22 @@
-"use client";
+import Stars from "@/components/Stars";
+import NavBar from "@/components/NavBar";
+import IntroOverlay from "./IntroOverlay";
 
-import { useEffect, useState } from "react";
-import StarBackground from "@/components/StarBackground";
-import Navigation from "@/components/Navigation";
-import { hasIntroPlayed } from "@/services/readingService";
-
+/**
+ * Server component.
+ *
+ * This must stay a server component: app/readings/[type]/page.tsx calls
+ * notFound() for an unknown reading type, and a "use client" parent here
+ * prevents that 404 from propagating — the error gets swallowed and the
+ * route serves the loading fallback with a 200 instead. Client-only pieces
+ * (intro overlay, navigation) live in their own client components.
+ */
 export default function Layout({ children }: { children: React.ReactNode }) {
-  const [showIntro, setShowIntro] = useState(false);
-
-  useEffect(() => {
-    if (!hasIntroPlayed()) {
-      setShowIntro(true);
-    }
-  }, []);
-
   return (
     <>
-      <StarBackground />
-      <Navigation />
-      {showIntro && (
-        <div className="fixed inset-0 z-50 bg-deepnight flex items-center justify-center">
-          <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gold-300 animate-pulse" />
-        </div>
-      )}
+      <Stars />
+      <NavBar />
+      <IntroOverlay />
       <main className="relative z-10">{children}</main>
     </>
   );

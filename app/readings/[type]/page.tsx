@@ -1,20 +1,25 @@
-"use client";
-
-import { Suspense } from "react";
-import MiniAppDrawing from "@/components/tarot/MiniAppDrawing";
-import type { ReadingType } from "@/data/types";
+import { notFound } from "next/navigation";
+import { isReadingType } from "@/lib/tarot-engine";
+import ReadingClient from "./ReadingClient";
 
 interface Props {
   params: { type?: string };
-  searchParams: { type?: string };
 }
 
-export default function MiniAppReadingPage({ params, searchParams }: Props) {
-  const type = (searchParams.type || params.type || "daily") as ReadingType;
+/**
+ * Server component: validates the route segment before rendering, so an
+ * unknown reading type returns a real 404 instead of silently falling back to
+ * a default reading. The drawing experience itself is client-side.
+ */
+export default async function MiniAppReadingPage({ params }: Props) {
+  // Await params so the segment is resolved and the notFound() check runs
+  // before any part of the response is streamed, so the status code can still
+  // be set to 404.
+  const { type } = await params;
 
-  return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-moonlight">Loading your reading...</div>}>
-      <MiniAppDrawing initialType={type} />
-    </Suspense>
-  );
+  if (!isReadingType(type)) {
+    notFound();
+  }
+
+  return <ReadingClient type={type} />;
 }

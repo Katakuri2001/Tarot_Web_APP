@@ -2,6 +2,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "main": ".open-next/worker.js",
   "name": "velora-tarot",
+  "account_id": "e86299bf709f164c49c7743f56829687",
   "compatibility_date": "2024-12-30",
   "compatibility_flags": ["nodejs_compat"],
   "assets": {

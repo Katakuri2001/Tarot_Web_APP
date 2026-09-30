@@ -58,6 +58,21 @@ export interface TarotEngine {
 const RECENT_AVOIDANCE_COUNT = 3;
 
 /**
+ * The canonical list of supported reading types. Used to validate route
+ * segments so an unknown type 404s instead of silently defaulting.
+ */
+export const READING_TYPES: readonly ReadingType[] = [
+  "daily",
+  "love",
+  "career",
+  "general",
+] as const;
+
+export function isReadingType(value: unknown): value is ReadingType {
+  return typeof value === "string" && READING_TYPES.includes(value as ReadingType);
+}
+
+/**
  * Create a new Tarot Engine instance.
  */
 export function createTarotEngine(): TarotEngine {

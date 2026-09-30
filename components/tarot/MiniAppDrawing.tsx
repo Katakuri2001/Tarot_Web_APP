@@ -38,10 +38,20 @@ interface CardPosition {
 
 type CardSize = "sm" | "md" | "lg";
 
+/** The deck is a single hero card, so the arena always uses the large size
+ *  regardless of how many cards are in it. */
+const DECK_SIZE: CardSize = "lg";
+
 /** How far the shuffle may wander, as a fraction of the room to each edge.
  *  Kept low so the riffle reads as the deck shuffling in place at the centre. */
 const SHUFFLE_SPREAD_X = 0.34;
 const SHUFFLE_SPREAD_Y = 0.22;
+
+/** Per-card offset that builds the deck. Two to three pixels per card reads as
+ *  a stack with visible depth while still looking like one squared deck. */
+const STACK_OFFSET_X = 0.9;
+const STACK_OFFSET_Y = -1.6;
+const STACK_ROTATE = 0.35;
 
 /** Rendered card dimensions in px. Must stay in sync with `sizeClasses`
  *  in MiniAppCard.tsx so the spread can be centred on the real card box. */
@@ -101,12 +111,10 @@ export default function MiniAppDrawing({ initialType, embedded = false }: Props)
     return { width: containerRef.current.offsetWidth, height: containerRef.current.offsetHeight };
   }, []);
 
-  // The size a card is rendered at for a given number of cards in the arena.
-  const sizeForCount = useCallback((count: number): CardSize => (count <= 3 ? "lg" : "md"), []);
-
-  // Compute the resting spread, centred in the arena. Cards are fanned along
-  // an arc whose apex sits at the container centre, so the group reads as
-  // centred rather than drifting up and left.
+  // Compute the resting deck, centred in the arena. Cards are stacked almost
+  // exactly on top of each other with a small per-card offset, so the arena
+  // reads as a single squared deck rather than a fan of separate cards. Only
+  // the top card is visible; the rest show as a thin deck edge behind it.
   const computePositions = useCallback(
     (ids: string[]): Record<string, CardPosition> => {
       const { width, height } = getContainerSize();
@@ -114,43 +122,24 @@ export default function MiniAppDrawing({ initialType, embedded = false }: Props)
       const count = ids.length;
       if (count === 0) return result;
 
-      const size = sizeForCount(count);
-      const { w: cardW } = CARD_DIMENSIONS[size];
       const cx = width / 2;
       const cy = height / 2;
 
-      // Arc geometry. A fixed 60° half-angle keeps the fan readable; the
-      // radius is capped by width so the outermost card's centre stays within
-      // `width / 2 - cardW / 2` and no card clips the arena edge.
-      const maxAngle = count <= 1 ? 0 : 60;
-      // Radius also bounded by height so the tall cards never overflow
-      // vertically, and 0 for a lone card so it sits dead centre.
-      const radius =
-        count <= 1
-          ? 0
-          : Math.min(width * 0.28, height * 0.2, (width / 2 - cardW / 2) / Math.sin((maxAngle * Math.PI) / 180));
-      // Half the arc's vertical rise, so the fan's bounding box is centred.
-      const lift = (radius * (1 - Math.cos((maxAngle * Math.PI) / 180))) / 2;
-
       ids.forEach((id, i) => {
-        const t = count === 1 ? 0 : i / (count - 1);
-        const angle = -maxAngle + 2 * maxAngle * t;
-        const rad = (angle * Math.PI) / 180;
-
-        // The arc curves up from its lowest point, so the fan's bounding box
-        // sits above the arc centre. `lift` shifts the whole group back down
-        // by half that rise, making the *bounding box* — not just the arc —
-        // centred on the arena.
+        // Deterministic per-index offset. The offsets are a couple of pixels
+        // per card, which reads as deck depth without ever splitting the stack
+        // into visually separate cards.
+        const step = i - (count - 1) / 2;
         const { x, y } = centerOf(
-          cx + radius * Math.sin(rad),
-          cy + lift - radius * (1 - Math.cos(rad)),
-          size
+          cx + step * STACK_OFFSET_X,
+          cy + step * STACK_OFFSET_Y,
+          DECK_SIZE
         );
 
         result[id] = {
           x,
           y,
-          rotate: angle * 0.5,
+          rotate: step * STACK_ROTATE,
           scale: 1,
           opacity: 1,
           filter: "none",
@@ -158,13 +147,13 @@ export default function MiniAppDrawing({ initialType, embedded = false }: Props)
       });
       return result;
     },
-    [getContainerSize, sizeForCount]
+    [getContainerSize]
   );
 
   // A single random position for the shuffle. Cards riffle around the centre
   // of the arena instead of scattering from the top-left corner.
   const randomPosition = useCallback(
-    (size: CardSize = "md"): CardPosition => {
+    (size: CardSize = DECK_SIZE): CardPosition => {
       const { width, height } = getContainerSize();
       const { w: cardW, h: cardH } = CARD_DIMENSIONS[size];
       const cx = width / 2;
@@ -200,29 +189,19 @@ export default function MiniAppDrawing({ initialType, embedded = false }: Props)
   // it always stays inside the arena. Derived from the same geometry as the
   // cards, so it can never overlap the deck.
   const statusTextTop = useMemo(() => {
-    const ids = visibleCardIds;
-    if (ids.length === 0) return "calc(50% + 150px)";
+    const count = visibleCardIds.length;
+    if (count === 0) return "calc(50% + 160px)";
 
     const { height } = getContainerSize();
-    const { h: cardH } = CARD_DIMENSIONS[sizeForCount(ids.length)];
-    const maxAngle = ids.length <= 1 ? 0 : 60;
-    const { width } = getContainerSize();
-    const { w: cardW } = CARD_DIMENSIONS[sizeForCount(ids.length)];
-    const radius =
-      ids.length <= 1
-        ? 0
-        : Math.min(
-            width * 0.28,
-            height * 0.2,
-            (width / 2 - cardW / 2) / Math.sin((maxAngle * Math.PI) / 180)
-          );
-    const lift = (radius * (1 - Math.cos((maxAngle * Math.PI) / 180))) / 2;
+    const { h: cardH } = CARD_DIMENSIONS[DECK_SIZE];
 
-    // Lowest card bottom edge, measured from the arena top.
-    const lowest = height / 2 + lift + radius * (1 - Math.cos((maxAngle * Math.PI) / 180)) + cardH / 2;
-    const clamped = Math.min(lowest + 20, height - 44);
+    // The stack extends half its depth either side of centre; take the lowest
+    // card's bottom edge and clamp so the label always stays in the arena.
+    const depth = ((count - 1) / 2) * Math.abs(STACK_OFFSET_Y);
+    const lowest = height / 2 + depth + cardH / 2;
+    const clamped = Math.min(lowest + 24, height - 44);
     return `${Math.max(0, clamped)}px`;
-  }, [visibleCardIds, getContainerSize, sizeForCount]);
+  }, [visibleCardIds, getContainerSize]);
 
   // Start a new reading
   const startReading = useCallback(
@@ -241,7 +220,7 @@ export default function MiniAppDrawing({ initialType, embedded = false }: Props)
       setPhase("shuffling");
       sound?.shuffle();
 
-      const shuffleSize = sizeForCount(visible.length);
+      const shuffleSize = DECK_SIZE;
 
       // Shuffle animation
       const interval = window.setInterval(() => {
@@ -261,7 +240,7 @@ export default function MiniAppDrawing({ initialType, embedded = false }: Props)
         setPhase("selecting");
       }, duration);
     },
-    [computePositions, randomPosition, sizeForCount, sound, reducedMotion]
+    [computePositions, randomPosition, sound, reducedMotion]
   );
 
   // Select a card
@@ -289,18 +268,35 @@ export default function MiniAppDrawing({ initialType, embedded = false }: Props)
         { cardId: id, orientation, position },
       ]);
 
-      // Animate selected card to the centre of the arena
+      // The chosen card becomes the only thing on screen: it lifts to the
+      // centre and scales up, and the rest of the deck is hidden entirely so
+      // the reveal is never competing with other cards.
       setPositions((prev) => {
         const next = { ...prev };
         const { width, height } = getContainerSize();
-        const ids = Object.keys(next);
-        const size = sizeForCount(ids.length);
-        const centered = centerOf(width / 2, height / 2, size);
+        const centered = centerOf(width / 2, height / 2, DECK_SIZE);
         Object.keys(next).forEach((key) => {
           if (key === id) {
-            next[key] = { x: centered.x, y: centered.y, rotate: 0, scale: 1.15, opacity: 1, filter: "none" };
+            next[key] = {
+              x: centered.x,
+              y: centered.y,
+              rotate: 0,
+              scale: 1.12,
+              opacity: 1,
+              filter: "none",
+            };
           } else {
-            next[key] = { ...next[key], scale: 0.7, opacity: 0.15, filter: "blur(4px) brightness(0.4)" };
+            // Fully hidden: the deck collapses away rather than lingering
+            // dimmed behind the revealed card.
+            next[key] = {
+              ...next[key],
+              x: centered.x,
+              y: centered.y,
+              rotate: 0,
+              scale: 0.9,
+              opacity: 0,
+              filter: "none",
+            };
           }
         });
         return next;
@@ -354,7 +350,7 @@ export default function MiniAppDrawing({ initialType, embedded = false }: Props)
         }
       }, reducedMotion ? 400 : 800);
     },
-    [phase, selectedCardId, selectedCards, readingType, currentStep, numCards, recentCardIds, getContainerSize, sizeForCount, sound, reducedMotion]
+    [phase, selectedCardId, selectedCards, readingType, currentStep, numCards, recentCardIds, getContainerSize, sound, reducedMotion]
   );
 
   // Draw again — reset to shuffling for proper reroll experience
@@ -375,7 +371,7 @@ export default function MiniAppDrawing({ initialType, embedded = false }: Props)
       setPositions(computePositions(visible));
       sound?.shuffle();
 
-      const shuffleSize = sizeForCount(visible.length);
+      const shuffleSize = DECK_SIZE;
 
       // Shuffle animation
       const interval = window.setInterval(() => {
@@ -395,7 +391,7 @@ export default function MiniAppDrawing({ initialType, embedded = false }: Props)
         setPhase("selecting");
       }, duration);
     }, reducedMotion ? 300 : 500);
-  }, [computePositions, randomPosition, sizeForCount, sound, reducedMotion]);
+  }, [computePositions, randomPosition, sound, reducedMotion]);
 
   // Auto-start shuffling when initialType is provided (for direct Mini App links)
   useEffect(() => {
@@ -408,7 +404,7 @@ export default function MiniAppDrawing({ initialType, embedded = false }: Props)
       setPhase("shuffling");
       sound?.shuffle();
 
-      const shuffleSize = sizeForCount(visible.length);
+      const shuffleSize = DECK_SIZE;
 
       const interval = window.setInterval(() => {
         setPositions((prev) => {
@@ -596,7 +592,7 @@ export default function MiniAppDrawing({ initialType, embedded = false }: Props)
                   isDimmed={state === "dimmed"}
                   isClickable={isClickable && state === "idle"}
                   index={i}
-                  size={sizeForCount(visibleCardIds.length)}
+                  size={DECK_SIZE}
                   onSelect={() => selectCard(cardId)}
                 />
               );

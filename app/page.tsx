@@ -7,6 +7,7 @@ import IntroAnimation from "@/components/brand/IntroAnimation";
 import StarBackground from "@/components/StarBackground";
 import Navigation from "@/components/Navigation";
 import PhonePreview from "@/components/PhonePreview";
+import MobilePreviewGrid from "@/components/MobilePreviewGrid";
 import { hasIntroPlayed } from "@/services/readingService";
 
 export default function HomePage() {
@@ -257,6 +258,9 @@ export default function HomePage() {
                 </div>
               </div>
             </motion.div>
+
+            {/* Mobile previews of the rest of the site */}
+            <MobilePreviewGrid />
           </div>
         </section>
 

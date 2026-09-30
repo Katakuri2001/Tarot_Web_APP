@@ -1,21 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import MiniAppDrawing from "@/components/tarot/MiniAppDrawing";
 
+/**
+ * Standalone Mini App entry point. No `initialType` is passed, so the
+ * experience opens on the reading-type picker.
+ */
 export default function MiniAppPage() {
-  const [showDrawing, setShowDrawing] = useState(false);
-
-  return (
-    <>
-      {showDrawing ? (
-        <MiniAppDrawing />
-      ) : (
-        <div className="min-h-screen bg-deepnight">
-          {/* This is a wrapper - the MiniAppDrawing handles the full screen */}
-          <MiniAppDrawing />
-        </div>
-      )}
-    </>
-  );
+  return <MiniAppDrawing />;
 }

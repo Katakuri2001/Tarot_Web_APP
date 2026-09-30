@@ -58,6 +58,11 @@ const centerOf = (cx: number, cy: number, size: CardSize): { x: number; y: numbe
 });
 
 interface Props {
+  /**
+   * Skip the reading-type picker and begin this reading immediately. Leave it
+   * undefined to start on the picker, which is the default everywhere except
+   * deep links like /readings/love.
+   */
   initialType?: ReadingType;
   /**
    * When true the component fills its parent instead of the whole viewport.
@@ -67,7 +72,7 @@ interface Props {
   embedded?: boolean;
 }
 
-export default function MiniAppDrawing({ initialType = "daily", embedded = false }: Props) {
+export default function MiniAppDrawing({ initialType, embedded = false }: Props) {
   const reducedMotion = useReducedMotion();
   const [soundEnabled] = useSoundEnabled();
   const sound = useSound(soundEnabled);
@@ -75,12 +80,11 @@ export default function MiniAppDrawing({ initialType = "daily", embedded = false
 
   const [phase, setPhase] = useState<"type-select" | "shuffling" | "spread" | "selecting" | "revealing" | "result">(initialType ? "shuffling" : "type-select");
   const [readingType, setReadingType] = useState<ReadingType>(initialType || "daily");
-  const [visibleCardIds, setVisibleCardIds] = useState<string[]>(initialType ? [] : []);
+  const [visibleCardIds, setVisibleCardIds] = useState<string[]>([]);
   const [positions, setPositions] = useState<Record<string, CardPosition>>({});
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [selectedCards, setSelectedCards] = useState<Array<{ cardId: string; orientation: Orientation; position: string }>>([]);
   const [currentStep, setCurrentStep] = useState(0);
-  const [isDrawing, setIsDrawing] = useState(false);
   const [recentCardIds, setRecentCardIds] = useState<string[]>([]);
   const [showResult, setShowResult] = useState(false);
   const [resultTransitioning, setResultTransitioning] = useState(false);
@@ -304,12 +308,32 @@ export default function MiniAppDrawing({ initialType = "daily", embedded = false
 
       setPhase("revealing");
 
+      // The card just drawn, for persisting the completed reading below.
+      const drawnCard = { cardId: id, orientation, position };
+
       // After reveal, check if more cards needed
       timerRef.current = window.setTimeout(() => {
         if (currentStep + 1 >= numCards) {
           setShowResult(true);
           setResultTransitioning(true);
           sound?.reveal();
+
+          // Persist now that the reading is complete, so the "saved to
+          // history" note on the result screen is accurate.
+          const complete = [...selectedCards, drawnCard];
+          saveReadingToStorage({
+            id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            readingType,
+            category: getReadingTypeLabel(readingType),
+            question: "",
+            cards: complete.map((c) => ({
+              position: c.position,
+              cardName: getCardById(c.cardId)?.name ?? "Unknown",
+              cardId: c.cardId,
+              orientation: c.orientation,
+            })),
+            timestamp: Date.now(),
+          });
         } else {
           setCurrentStep((prev) => prev + 1);
           sound?.shuffle();
@@ -330,7 +354,7 @@ export default function MiniAppDrawing({ initialType = "daily", embedded = false
         }
       }, reducedMotion ? 400 : 800);
     },
-    [phase, selectedCardId, readingType, currentStep, numCards, recentCardIds, getContainerSize, sound]
+    [phase, selectedCardId, selectedCards, readingType, currentStep, numCards, recentCardIds, getContainerSize, sizeForCount, sound, reducedMotion]
   );
 
   // Draw again — reset to shuffling for proper reroll experience

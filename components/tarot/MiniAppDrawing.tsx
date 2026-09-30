@@ -51,11 +51,28 @@ const SHUFFLE_SPEED = 0.085;
 const SHUFFLE_X_JITTER = 7;
 const SHUFFLE_ROT_JITTER = 5;
 
-/** Per-card offset that builds the deck. Two to three pixels per card reads as
- *  a stack with visible depth while still looking like one squared deck. */
-const STACK_OFFSET_X = 0.9;
-const STACK_OFFSET_Y = -1.6;
-const STACK_ROTATE = 0.35;
+/**
+ * Dome fan — how the deck rests once shuffled, so every card is visible and
+ * individually tappable rather than only the top one.
+ *
+ * The fan is elliptical: cards sit on an arc whose horizontal radius is solved
+ * so the *rotated* card corners clear the arena sides, and whose depth is
+ * capped to stay under a card height (a dome deeper than a card stops reading
+ * as a fan). Depth is what gives each card an exposed strip: neighbours sit
+ * ~47px lower, so the top of every card stays clear and tappable.
+ */
+const DOME_HALF_ANGLE = (45 * Math.PI) / 180;
+const DOME_ROTATE = 11;
+const DOME_MAX_RADIUS_X = 220;
+const DOME_MIN_DROOP = 24;
+/**
+ * Dome depth as a fraction of a card's height. This is the tap-target knob:
+ * each card sits ~81px lower than its left neighbour, so that much of its own
+ * face is never covered and stays tappable. Shallower domes (0.34) only left a
+ * ~13px sliver on a 320px screen.
+ */
+const DOME_DROOP_RATIO = 0.58;
+const DOME_PAD = 10;
 
 /** Rendered card dimensions in px. Must stay in sync with `sizeClasses`
  *  in MiniAppCard.tsx so the spread can be centred on the real card box. */
@@ -119,10 +136,14 @@ export default function MiniAppDrawing({ initialType, embedded = false }: Props)
     return { width: containerRef.current.offsetWidth, height: containerRef.current.offsetHeight };
   }, []);
 
-  // Compute the resting deck, centred in the arena. Cards are stacked almost
-  // exactly on top of each other with a small per-card offset, so the arena
-  // reads as a single squared deck rather than a fan of separate cards. Only
-  // the top card is visible; the rest show as a thin deck edge behind it.
+  // Resting position: a dome of cards, centred in the arena, every one of them
+  // visible and individually tappable.
+  //
+  // The horizontal radius is solved from the arena width rather than fixed,
+  // because a rotated card is much wider than a square one (a 176x256 card at
+  // 11 degrees is ~222px across) and a fixed radius overflows on every phone.
+  // The dome is then shifted up by half its depth so the *bounding box* is
+  // centred rather than the arc.
   const computePositions = useCallback(
     (ids: string[]): Record<string, CardPosition> => {
       const { width, height } = getContainerSize();
@@ -133,21 +154,49 @@ export default function MiniAppDrawing({ initialType, embedded = false }: Props)
       const cx = width / 2;
       const cy = height / 2;
 
+      const { w: cardW, h: cardH } = CARD_DIMENSIONS[DECK_SIZE];
+      const rotRad = (DOME_ROTATE * Math.PI) / 180;
+      // Half-extent of the card's bounding box once rotated.
+      const halfW = (cardW / 2) * Math.cos(rotRad) + (cardH / 2) * Math.sin(rotRad);
+      const halfH = (cardW / 2) * Math.sin(rotRad) + (cardH / 2) * Math.cos(rotRad);
+
+      if (count === 1) {
+        const { x, y } = centerOf(cx, cy, DECK_SIZE);
+        result[ids[0]] = { x, y, rotate: 0, scale: 1, opacity: 1, filter: "none" };
+        return result;
+      }
+
+      // Widest fan whose rotated corners still clear the arena sides.
+      const radiusX = Math.min(
+        Math.max(0, width - DOME_PAD * 2 - halfW * 2) / 2 / Math.sin(DOME_HALF_ANGLE),
+        DOME_MAX_RADIUS_X
+      );
+      // Dome depth, capped so it never exceeds a card height and always leaves
+      // room for the rotated box.
+      const roomForDroop = height - DOME_PAD * 2 - halfH * 2;
+      const droop = Math.max(
+        DOME_MIN_DROOP,
+        Math.min(roomForDroop, cardH * DOME_DROOP_RATIO)
+      );
+      const radiusY = droop / (1 - Math.cos(DOME_HALF_ANGLE));
+
+      // Centre the bounding box, not the arc.
+      const originY = cy - droop / 2;
+
       ids.forEach((id, i) => {
-        // Deterministic per-index offset. The offsets are a couple of pixels
-        // per card, which reads as deck depth without ever splitting the stack
-        // into visually separate cards.
-        const step = i - (count - 1) / 2;
+        // t runs -1 (left) .. 1 (right) across the fan.
+        const t = (i / (count - 1)) * 2 - 1;
+        const angle = t * DOME_HALF_ANGLE;
         const { x, y } = centerOf(
-          cx + step * STACK_OFFSET_X,
-          cy + step * STACK_OFFSET_Y,
+          cx + radiusX * Math.sin(angle),
+          originY + radiusY * (1 - Math.cos(angle)),
           DECK_SIZE
         );
 
         result[id] = {
           x,
           y,
-          rotate: step * STACK_ROTATE,
+          rotate: t * DOME_ROTATE,
           scale: 1,
           opacity: 1,
           filter: "none",
@@ -207,21 +256,30 @@ export default function MiniAppDrawing({ initialType, embedded = false }: Props)
     [getContainerSize]
   );
 
-  // Where the status line goes: just below the spread's lower edge, clamped so
-  // it always stays inside the arena. Derived from the same geometry as the
-  // cards, so it can never overlap the deck.
+  // Where the status line goes: just below the dome's lower edge, clamped so it
+  // always stays inside the arena. Derived from the same geometry as the cards,
+  // so it can never overlap the fan.
   const statusTextTop = useMemo(() => {
     const count = visibleCardIds.length;
     if (count === 0) return "calc(50% + 160px)";
 
     const { height } = getContainerSize();
     const { h: cardH } = CARD_DIMENSIONS[DECK_SIZE];
+    const rotRad = (DOME_ROTATE * Math.PI) / 180;
+    const { w: cardW } = CARD_DIMENSIONS[DECK_SIZE];
+    const halfH = (cardW / 2) * Math.sin(rotRad) + (cardH / 2) * Math.cos(rotRad);
 
-    // The stack extends half its depth either side of centre; take the lowest
-    // card's bottom edge and clamp so the label always stays in the arena.
-    const depth = ((count - 1) / 2) * Math.abs(STACK_OFFSET_Y);
-    const lowest = height / 2 + depth + cardH / 2;
-    const clamped = Math.min(lowest + 24, height - 44);
+    // The dome's outer cards sit `droop` below the centre card, and the whole
+    // fan is shifted up by half that, so the lowest card's bottom edge is at
+    // height/2 + droop/2 + halfH.
+    const roomForDroop = height - DOME_PAD * 2 - halfH * 2;
+    const droop =
+      count === 1
+        ? 0
+        : Math.max(DOME_MIN_DROOP, Math.min(roomForDroop, cardH * DOME_DROOP_RATIO));
+
+    const lowest = height / 2 + droop / 2 + halfH;
+    const clamped = Math.min(lowest + 20, height - 40);
     return `${Math.max(0, clamped)}px`;
   }, [visibleCardIds, getContainerSize]);
 

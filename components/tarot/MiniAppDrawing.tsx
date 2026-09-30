@@ -36,6 +36,22 @@ interface CardPosition {
   filter?: string;
 }
 
+type CardSize = "sm" | "md" | "lg";
+
+/** Rendered card dimensions in px. Must stay in sync with `sizeClasses`
+ *  in MiniAppCard.tsx so the spread can be centred on the real card box. */
+const CARD_DIMENSIONS: Record<CardSize, { w: number; h: number }> = {
+  sm: { w: 112, h: 160 },
+  md: { w: 144, h: 208 },
+  lg: { w: 176, h: 256 },
+};
+
+/** Top-left offset of a card centred on the given point. */
+const centerOf = (cx: number, cy: number, size: CardSize): { x: number; y: number } => ({
+  x: cx - CARD_DIMENSIONS[size].w / 2,
+  y: cy - CARD_DIMENSIONS[size].h / 2,
+});
+
 interface Props {
   initialType?: ReadingType;
   /**
@@ -76,20 +92,55 @@ export default function MiniAppDrawing({ initialType = "daily", embedded = false
     return { width: containerRef.current.offsetWidth, height: containerRef.current.offsetHeight };
   }, []);
 
-  // Compute spread positions
+  // The size a card is rendered at for a given number of cards in the arena.
+  const sizeForCount = useCallback((count: number): CardSize => (count <= 3 ? "lg" : "md"), []);
+
+  // Compute the resting spread, centred in the arena. Cards are fanned along
+  // an arc whose apex sits at the container centre, so the group reads as
+  // centred rather than drifting up and left.
   const computePositions = useCallback(
     (ids: string[]): Record<string, CardPosition> => {
       const { width, height } = getContainerSize();
       const result: Record<string, CardPosition> = {};
       const count = ids.length;
-      const radius = Math.min(width, height) * 0.2;
+      if (count === 0) return result;
+
+      const size = sizeForCount(count);
+      const { w: cardW } = CARD_DIMENSIONS[size];
+      const cx = width / 2;
+      const cy = height / 2;
+
+      // Arc geometry. A fixed 60° half-angle keeps the fan readable; the
+      // radius is capped by width so the outermost card's centre stays within
+      // `width / 2 - cardW / 2` and no card clips the arena edge.
+      const maxAngle = count <= 1 ? 0 : 60;
+      // Radius also bounded by height so the tall cards never overflow
+      // vertically, and 0 for a lone card so it sits dead centre.
+      const radius =
+        count <= 1
+          ? 0
+          : Math.min(width * 0.28, height * 0.2, (width / 2 - cardW / 2) / Math.sin((maxAngle * Math.PI) / 180));
+      // Half the arc's vertical rise, so the fan's bounding box is centred.
+      const lift = (radius * (1 - Math.cos((maxAngle * Math.PI) / 180))) / 2;
 
       ids.forEach((id, i) => {
-        const angle = -60 + (120 / (count - 1 || 1)) * i;
-        const rad = angle * (Math.PI / 180);
+        const t = count === 1 ? 0 : i / (count - 1);
+        const angle = -maxAngle + 2 * maxAngle * t;
+        const rad = (angle * Math.PI) / 180;
+
+        // The arc curves up from its lowest point, so the fan's bounding box
+        // sits above the arc centre. `lift` shifts the whole group back down
+        // by half that rise, making the *bounding box* — not just the arc —
+        // centred on the arena.
+        const { x, y } = centerOf(
+          cx + radius * Math.sin(rad),
+          cy + lift - radius * (1 - Math.cos(rad)),
+          size
+        );
+
         result[id] = {
-          x: width / 2 + radius * Math.sin(rad) - 60,
-          y: height * 0.4 + radius * Math.cos(rad) - 80,
+          x,
+          y,
           rotate: angle * 0.5,
           scale: 1,
           opacity: 1,
@@ -98,21 +149,39 @@ export default function MiniAppDrawing({ initialType = "daily", embedded = false
       });
       return result;
     },
-    [getContainerSize]
+    [getContainerSize, sizeForCount]
   );
 
-  // Get a random position for shuffling
-  const randomPosition = useCallback((): CardPosition => {
-    const { width, height } = getContainerSize();
-    return {
-      x: Math.random() * Math.max(10, width - 120),
-      y: Math.random() * Math.max(10, height - 180),
-      rotate: (Math.random() - 0.5) * 50,
-      scale: 0.8 + Math.random() * 0.2,
-      opacity: 1,
-      filter: "none",
-    };
-  }, [getContainerSize]);
+  // A single random position for the shuffle. Cards riffle around the centre
+  // of the arena instead of scattering from the top-left corner.
+  const randomPosition = useCallback(
+    (size: CardSize = "md"): CardPosition => {
+      const { width, height } = getContainerSize();
+      const { w: cardW, h: cardH } = CARD_DIMENSIONS[size];
+      const cx = width / 2;
+      const cy = height / 2;
+
+      // Riffle within a box around the centre, inset so cards never clip.
+      const rangeX = Math.max(0, cx - cardW / 2 - 6);
+      const rangeY = Math.max(0, cy - cardH / 2 - 6);
+
+      const { x, y } = centerOf(
+        cx + (Math.random() * 2 - 1) * rangeX,
+        cy + (Math.random() * 2 - 1) * rangeY,
+        size
+      );
+
+      return {
+        x,
+        y,
+        rotate: (Math.random() - 0.5) * 26,
+        scale: 0.92 + Math.random() * 0.12,
+        opacity: 1,
+        filter: "none",
+      };
+    },
+    [getContainerSize]
+  );
 
   // Start a new reading
   const startReading = useCallback(
@@ -131,12 +200,14 @@ export default function MiniAppDrawing({ initialType = "daily", embedded = false
       setPhase("shuffling");
       sound?.shuffle();
 
+      const shuffleSize = sizeForCount(visible.length);
+
       // Shuffle animation
       const interval = window.setInterval(() => {
         setPositions((prev) => {
           const next = { ...prev };
           Object.keys(next).forEach((id) => {
-            next[id] = { ...next[id], ...randomPosition() };
+            next[id] = { ...next[id], ...randomPosition(shuffleSize) };
           });
           return next;
         });
@@ -149,7 +220,7 @@ export default function MiniAppDrawing({ initialType = "daily", embedded = false
         setPhase("selecting");
       }, duration);
     },
-    [computePositions, randomPosition, sound, reducedMotion]
+    [computePositions, randomPosition, sizeForCount, sound, reducedMotion]
   );
 
   // Select a card
@@ -177,13 +248,16 @@ export default function MiniAppDrawing({ initialType = "daily", embedded = false
         { cardId: id, orientation, position },
       ]);
 
-      // Animate selected card to center
+      // Animate selected card to the centre of the arena
       setPositions((prev) => {
         const next = { ...prev };
         const { width, height } = getContainerSize();
+        const ids = Object.keys(next);
+        const size = sizeForCount(ids.length);
+        const centered = centerOf(width / 2, height / 2, size);
         Object.keys(next).forEach((key) => {
           if (key === id) {
-            next[key] = { x: width / 2 - 60, y: height * 0.35 - 80, rotate: 0, scale: 1.15 };
+            next[key] = { x: centered.x, y: centered.y, rotate: 0, scale: 1.15, opacity: 1, filter: "none" };
           } else {
             next[key] = { ...next[key], scale: 0.7, opacity: 0.15, filter: "blur(4px) brightness(0.4)" };
           }
@@ -240,12 +314,14 @@ export default function MiniAppDrawing({ initialType = "daily", embedded = false
       setPositions(computePositions(visible));
       sound?.shuffle();
 
+      const shuffleSize = sizeForCount(visible.length);
+
       // Shuffle animation
       const interval = window.setInterval(() => {
         setPositions((prev) => {
           const next = { ...prev };
           Object.keys(next).forEach((id) => {
-            next[id] = { ...next[id], ...randomPosition() };
+            next[id] = { ...next[id], ...randomPosition(shuffleSize) };
           });
           return next;
         });
@@ -258,7 +334,7 @@ export default function MiniAppDrawing({ initialType = "daily", embedded = false
         setPhase("selecting");
       }, duration);
     }, reducedMotion ? 300 : 500);
-  }, [computePositions, randomPosition, sound, reducedMotion]);
+  }, [computePositions, randomPosition, sizeForCount, sound, reducedMotion]);
 
   // Auto-start shuffling when initialType is provided (for direct Mini App links)
   useEffect(() => {
@@ -271,11 +347,13 @@ export default function MiniAppDrawing({ initialType = "daily", embedded = false
       setPhase("shuffling");
       sound?.shuffle();
 
+      const shuffleSize = sizeForCount(visible.length);
+
       const interval = window.setInterval(() => {
         setPositions((prev) => {
           const next = { ...prev };
           Object.keys(next).forEach((id) => {
-            next[id] = { ...next[id], ...randomPosition() };
+            next[id] = { ...next[id], ...randomPosition(shuffleSize) };
           });
           return next;
         });
@@ -431,13 +509,15 @@ export default function MiniAppDrawing({ initialType = "daily", embedded = false
 
       {/* Card Drawing Arena */}
       <div ref={containerRef} className="flex-1 relative z-10 min-h-0">
+        {/* Cards are absolutely positioned and placed by an explicit arc, so
+            this wrapper is a plain positioned box rather than a flex column. */}
         <div
-          className="absolute inset-0 flex flex-col items-center justify-center p-4"
+          className="absolute inset-0"
           style={{
             background: "radial-gradient(ellipse at center, rgba(26,10,62,0.3) 0%, rgba(6,6,15,0.95) 100%)",
           }}
         >
-          <AnimatePresence mode="popLayout">
+          <AnimatePresence>
             {visibleCardIds.map((cardId, i) => {
               const card = getCardById(cardId);
               if (!card) return null;
@@ -449,12 +529,13 @@ export default function MiniAppDrawing({ initialType = "daily", embedded = false
                   card={card}
                   orientation={state === "revealed" ? (selectedCards.find((c) => c.cardId === cardId)?.orientation || "upright") : "upright"}
                   position={pos}
+                  layout="absolute"
                   isSelected={state === "selected"}
                   isRevealed={state === "revealed"}
                   isDimmed={state === "dimmed"}
                   isClickable={isClickable && state === "idle"}
                   index={i}
-                  size={visibleCardIds.length <= 3 ? "lg" : "md"}
+                  size={sizeForCount(visibleCardIds.length)}
                   onSelect={() => selectCard(cardId)}
                 />
               );
@@ -462,11 +543,12 @@ export default function MiniAppDrawing({ initialType = "daily", embedded = false
           </AnimatePresence>
         </div>
 
-        {/* Status text */}
+        {/* Status text — sits just below the centred spread */}
         <AnimatePresence mode="wait">
           {(phase === "selecting" || phase === "revealing") && (
             <motion.div
-              className="absolute bottom-20 left-1/2 -translate-x-1/2 text-center z-30"
+              className="absolute left-1/2 -translate-x-1/2 text-center z-30 pointer-events-none"
+              style={{ top: "calc(50% + 150px)" }}
               key="status"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}

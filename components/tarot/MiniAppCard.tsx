@@ -30,6 +30,14 @@ interface MiniAppCardProps {
   position?: CardPosition;
   style?: React.CSSProperties;
   className?: string;
+  /**
+   * "flow" (default) keeps the card in normal document flow, so `position`
+   * acts as an offset from wherever flex/grid placed it. Use "absolute" to
+   * pin the card to its parent's top-left and treat `position.x/y` as true
+   * container coordinates — required for the free-form spread, where cards
+   * are positioned by an explicit arc rather than by layout.
+   */
+  layout?: "flow" | "absolute";
 }
 
 const sizeClasses = {
@@ -52,15 +60,18 @@ export default function MiniAppCard({
   position,
   style,
   className = "",
+  layout = "flow",
 }: MiniAppCardProps) {
   const reducedMotion = useReducedMotion();
 
   const pos = position || { x: 0, y: 0, rotate: 0, scale: 1 };
   const handleClick = onSelect || onClick;
 
+  const positionClass = layout === "absolute" ? "absolute top-0 left-0" : "relative";
+
   return (
     <motion.div
-      className={`${sizeClasses[size]} relative cursor-pointer select-none ${className}`}
+      className={`${sizeClasses[size]} ${positionClass} cursor-pointer select-none ${className}`}
       style={{
         ...style,
         opacity: isDimmed ? 0.15 : 1,

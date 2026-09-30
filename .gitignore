@@ -16,3 +16,4 @@ tsconfig.tsbuildinfo
 admin/dist/
 playwright-report/
 test-results/
+.open-next/

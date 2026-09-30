@@ -53,7 +53,12 @@ export default function MobilePreviewGrid() {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-8 gap-y-10 max-w-5xl mx-auto justify-items-center">
+      {/*
+        Column counts are chosen so a 160px shell plus its 8px side-button
+        overhang always fits. Two columns overflow below ~412px, so phones get
+        a single column and the multi-column layout starts at sm.
+      */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-x-8 gap-y-10 max-w-5xl mx-auto justify-items-center">
         {ROUTES.map((route) => (
           <RetroPhone
             key={route.path}

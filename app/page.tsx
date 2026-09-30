@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import IntroAnimation from "@/components/brand/IntroAnimation";
 import StarBackground from "@/components/StarBackground";
 import Navigation from "@/components/Navigation";
-import MiniAppDrawing from "@/components/tarot/MiniAppDrawing";
+import PhonePreview from "@/components/PhonePreview";
 import { hasIntroPlayed } from "@/services/readingService";
 
 export default function HomePage() {
@@ -206,45 +206,8 @@ export default function HomePage() {
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-10 lg:gap-16 items-center max-w-5xl mx-auto">
-                {/* Phone frame — true 390px mobile width */}
-                <div className="flex justify-center">
-                  <div className="relative w-full max-w-[390px]">
-                    {/* Glow */}
-                    <div
-                      className="absolute -inset-8 rounded-[3rem] opacity-40 blur-2xl pointer-events-none"
-                      style={{
-                        background:
-                          "radial-gradient(circle at 50% 40%, rgba(212,184,90,0.18) 0%, rgba(26,10,62,0.25) 45%, transparent 70%)",
-                      }}
-                    />
-
-                    <div
-                      className="relative w-full rounded-[2.25rem] border border-gold-400/25 bg-deepnight overflow-hidden shadow-2xl"
-                      style={{
-                        height: "min(844px, 78vh)",
-                        boxShadow:
-                          "0 0 0 8px #0a0a1a, 0 0 0 9px rgba(212,184,90,0.18), 0 30px 80px rgba(0,0,0,0.7)",
-                      }}
-                    >
-                      {/* Notch */}
-                      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-6 bg-[#0a0a1a] rounded-b-2xl z-40 flex items-center justify-center">
-                        <div className="w-14 h-1 rounded-full bg-white/10" />
-                      </div>
-
-                      <div className="absolute inset-0 top-6">
-                        <MiniAppDrawing embedded />
-                      </div>
-
-                      {/* Home indicator */}
-                      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-28 h-1 rounded-full bg-white/15 z-40 pointer-events-none" />
-                    </div>
-
-                    {/* Caption */}
-                    <p className="text-center text-muted text-xs mt-4">
-                      390 × 844 · iPhone 14 viewport
-                    </p>
-                  </div>
-                </div>
+                {/* Phone frame — live mini app at real device dimensions */}
+                <PhonePreview />
 
                 {/* Mobile view grid of the flow */}
                 <div>

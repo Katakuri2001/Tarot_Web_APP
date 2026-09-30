@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useReducedMotion, useSoundEnabled } from "@/hooks/useShared";
@@ -37,6 +37,11 @@ interface CardPosition {
 }
 
 type CardSize = "sm" | "md" | "lg";
+
+/** How far the shuffle may wander, as a fraction of the room to each edge.
+ *  Kept low so the riffle reads as the deck shuffling in place at the centre. */
+const SHUFFLE_SPREAD_X = 0.34;
+const SHUFFLE_SPREAD_Y = 0.22;
 
 /** Rendered card dimensions in px. Must stay in sync with `sizeClasses`
  *  in MiniAppCard.tsx so the spread can be centred on the real card box. */
@@ -161,9 +166,13 @@ export default function MiniAppDrawing({ initialType = "daily", embedded = false
       const cx = width / 2;
       const cy = height / 2;
 
-      // Riffle within a box around the centre, inset so cards never clip.
-      const rangeX = Math.max(0, cx - cardW / 2 - 6);
-      const rangeY = Math.max(0, cy - cardH / 2 - 6);
+      // Riffle within a tight box around the centre. The range is a fraction of
+      // the space to the edges, so the deck visibly shuffles *in place* at the
+      // middle of the screen instead of drifting across it.
+      const roomX = Math.max(0, cx - cardW / 2 - 8);
+      const roomY = Math.max(0, cy - cardH / 2 - 8);
+      const rangeX = roomX * SHUFFLE_SPREAD_X;
+      const rangeY = roomY * SHUFFLE_SPREAD_Y;
 
       const { x, y } = centerOf(
         cx + (Math.random() * 2 - 1) * rangeX,
@@ -174,14 +183,42 @@ export default function MiniAppDrawing({ initialType = "daily", embedded = false
       return {
         x,
         y,
-        rotate: (Math.random() - 0.5) * 26,
-        scale: 0.92 + Math.random() * 0.12,
+        rotate: (Math.random() - 0.5) * 18,
+        scale: 0.94 + Math.random() * 0.1,
         opacity: 1,
         filter: "none",
       };
     },
     [getContainerSize]
   );
+
+  // Where the status line goes: just below the spread's lower edge, clamped so
+  // it always stays inside the arena. Derived from the same geometry as the
+  // cards, so it can never overlap the deck.
+  const statusTextTop = useMemo(() => {
+    const ids = visibleCardIds;
+    if (ids.length === 0) return "calc(50% + 150px)";
+
+    const { height } = getContainerSize();
+    const { h: cardH } = CARD_DIMENSIONS[sizeForCount(ids.length)];
+    const maxAngle = ids.length <= 1 ? 0 : 60;
+    const { width } = getContainerSize();
+    const { w: cardW } = CARD_DIMENSIONS[sizeForCount(ids.length)];
+    const radius =
+      ids.length <= 1
+        ? 0
+        : Math.min(
+            width * 0.28,
+            height * 0.2,
+            (width / 2 - cardW / 2) / Math.sin((maxAngle * Math.PI) / 180)
+          );
+    const lift = (radius * (1 - Math.cos((maxAngle * Math.PI) / 180))) / 2;
+
+    // Lowest card bottom edge, measured from the arena top.
+    const lowest = height / 2 + lift + radius * (1 - Math.cos((maxAngle * Math.PI) / 180)) + cardH / 2;
+    const clamped = Math.min(lowest + 20, height - 44);
+    return `${Math.max(0, clamped)}px`;
+  }, [visibleCardIds, getContainerSize, sizeForCount]);
 
   // Start a new reading
   const startReading = useCallback(
@@ -543,12 +580,13 @@ export default function MiniAppDrawing({ initialType = "daily", embedded = false
           </AnimatePresence>
         </div>
 
-        {/* Status text — sits just below the centred spread */}
+        {/* Status text — anchored just below the spread's own lower edge, so it
+            clears the deck on every viewport instead of a fixed offset. */}
         <AnimatePresence mode="wait">
           {(phase === "selecting" || phase === "revealing") && (
             <motion.div
               className="absolute left-1/2 -translate-x-1/2 text-center z-30 pointer-events-none"
-              style={{ top: "calc(50% + 150px)" }}
+              style={{ top: statusTextTop }}
               key="status"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}

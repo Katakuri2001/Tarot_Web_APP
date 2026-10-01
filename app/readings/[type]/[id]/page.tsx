@@ -1,264 +1,29 @@
-"use client";
+import { notFound } from "next/navigation";
+import { isReadingType } from "@/lib/tarot-engine";
+import ReadingDetail from "./ReadingDetail";
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import StarBackground from "@/components/StarBackground";
-import Navigation from "@/components/Navigation";
-import TarotCard from "@/components/tarot/TarotCard";
-import { tarotCards } from "@/data/tarotCards";
-import { getCardById, getCardInterpretation, getPositionMeaning, getReadingTypeLabel } from "@/utils/tarotUtils";
-import { getReadingsFromStorage } from "@/services/readingService";
-import { useSound } from "@/services/soundService";
-import { useReducedMotion } from "@/hooks/useShared";
-import { formatDate } from "@/utils/dateUtils";
-import type { Orientation } from "@/data/types";
-import type { SavedReading } from "@/data/types";
+interface Props {
+  params: { type?: string; id?: string };
+}
 
-export default function ReadingResultPage() {
-  const params = useParams();
-  const router = useRouter();
-  const type = params.type as string;
-  const id = params.id as string;
-  const reducedMotion = useReducedMotion();
-  const { reveal } = useSound(false);
-  const [cards, setCards] = useState<SavedReading | null>(null);
-  const [revealedIndex, setRevealedIndex] = useState(-1);
-  const [showSummary, setShowSummary] = useState(false);
-  const [notFound, setNotFound] = useState(false);
+/**
+ * Server component for a single saved reading.
+ *
+ * The reading id cannot be validated here — saved readings live in the
+ * visitor's localStorage, not in a server-side store, so the server has no way
+ * to know whether an id is real. What *can* be validated is the route shape:
+ * an unknown reading type or a missing id is a bad URL no matter what, so those
+ * return a real 404 instead of a 200 that renders a "reading not found"
+ * message.
+ *
+ * The id itself is resolved in ReadingDetail, in the browser.
+ */
+export default function ReadingResultPage({ params }: Props) {
+  const { type, id } = params;
 
-  useEffect(() => {
-    const readings = getReadingsFromStorage();
-    const found = readings.find((r) => r.id === id);
-    if (found) {
-      setCards(found);
-    } else {
-      setNotFound(true);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    if (cards && revealedIndex < cards.cards.length - 1) {
-      const timer = setTimeout(() => {
-        setRevealedIndex((prev) => prev + 1);
-        reveal();
-      }, 1200);
-      return () => clearTimeout(timer);
-    } else if (cards && revealedIndex === cards.cards.length - 1) {
-      const timer = setTimeout(() => setShowSummary(true), 1500);
-      return () => clearTimeout(timer);
-    }
-  }, [cards, revealedIndex, reveal]);
-
-  if (notFound) {
-    return (
-      <div className="min-h-screen flex items-center justify-center pt-16 sm:pt-20 px-4">
-        <div className="text-center">
-          <p className="text-moonlight mb-4">Reading not found. Please start a new reading.</p>
-          <button onClick={() => router.push("/readings")} className="px-6 py-3 rounded-full border border-gold-400/30 text-gold-300 text-sm tracking-wider hover:border-gold-400/60 transition-all">
-            Start a Reading
-          </button>
-        </div>
-      </div>
-    );
+  if (!isReadingType(type) || !id) {
+    notFound();
   }
 
-  if (!cards) {
-    return (
-      <div className="min-h-screen flex items-center justify-center pt-16 sm:pt-20 px-4">
-        <div className="text-center">
-          <p className="text-moonlight mb-4">Loading your reading...</p>
-          <button onClick={() => router.push("/readings")} className="text-gold-300 text-sm tracking-wider">
-            Return to Readings
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const dateStr = formatDate(new Date(cards.timestamp));
-
-  const handleShare = async () => {
-    const cardNames = cards.cards.map((c) => c.cardName).join(" • ");
-    const text = `I drew ${cardNames} during a ${cards.category}. Find your own reading at Velora.`;
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: "Velora Reading", text });
-      } catch {
-        // User cancelled
-      }
-    } else {
-      try {
-        await navigator.clipboard.writeText(text);
-        alert("Reading copied to clipboard!");
-      } catch {
-        // clipboard unavailable
-      }
-    }
-  };
-
-  return (
-    <>
-      <StarBackground />
-      <Navigation />
-
-      <main className="relative z-10 min-h-screen pt-16 sm:pt-20 px-4 pb-16 safe-top safe-bottom">
-        <div className="max-w-5xl mx-auto">
-          <motion.div
-            className="text-center mb-12"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <p className="text-gold-300 tracking-widest uppercase text-xs mb-2">{getReadingTypeLabel(cards.readingType)}</p>
-            <p className="text-coolgray text-sm">{dateStr}</p>
-          </motion.div>
-
-          <div className="flex flex-wrap justify-center gap-3 md:gap-6 mb-12">
-            {cards.cards.map((card, i) => {
-              const cardData = getCardById(card.cardId);
-              if (!cardData) return null;
-              const isRevealed = i <= revealedIndex;
-
-              return (
-                <motion.div
-                  key={i}
-                  className="w-36 md:w-44"
-                  initial={{ opacity: 0, y: 40 }}
-                  animate={isRevealed ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
-                  transition={reducedMotion ? { duration: 0.3 } : { duration: 0.6, delay: i * 0.2 }}
-                >
-                  {cards.cards.length > 1 && (
-                    <p className="text-center text-gold-300 tracking-widest uppercase text-xs mb-3">
-                      {getPositionMeaning(card.position)}
-                    </p>
-                  )}
-
-                  <TarotCard
-                    card={cardData}
-                    orientation={card.orientation as Orientation}
-                    isRevealed={isRevealed}
-                    aria-label={`${cardData.name}, ${card.orientation}`}
-                  />
-
-                  {isRevealed && (
-                    <motion.div
-                      className="text-center mt-3"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.3 }}
-                    >
-                      <p className="font-serif-display text-warmwhite text-lg" style={{ fontWeight: 500 }}>
-                        {cardData.name}
-                      </p>
-                      <p className="text-coolgray text-xs mt-1">
-                        {card.orientation === "reversed" ? "Reversed" : "Upright"}
-                      </p>
-                      <div className="flex justify-center gap-1 mt-1 flex-wrap">
-                        {cardData.keywords.slice(0, 3).map((k) => (
-                          <span key={k} className="text-gold-300 text-[10px] tracking-wider">
-                            {k}
-                          </span>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </motion.div>
-              );
-            })}
-          </div>
-
-          {showSummary && (
-            <motion.div
-              className="max-w-3xl mx-auto mb-12"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-            >
-              <h2 className="font-serif-display text-2xl text-warmwhite text-center mb-8" style={{ fontWeight: 400 }}>
-                Your Reading
-              </h2>
-              <div className="grid gap-4">
-                {cards.cards.map((card, i) => {
-                  const cardData = getCardById(card.cardId);
-                  if (!cardData) return null;
-                  const interpretation = getCardInterpretation(cardData, card.orientation as Orientation, cards.readingType);
-
-                  return (
-                    <div key={i} className="glass p-4 sm:p-5 rounded-xl">
-                      <h3 className="font-serif-display text-lg text-gold-300 mb-2">
-                        {cardData.name} {card.orientation === "reversed" ? "(Reversed)" : ""}
-                      </h3>
-                      <p className="text-warmwhite text-sm leading-relaxed mb-4">{interpretation}</p>
-
-                      <div className="mb-4">
-                        <h4 className="text-xs tracking-widest uppercase text-gold-300/60 mb-2">Keywords</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {cardData.keywords.map((k) => (
-                            <span key={k} className="px-2 py-1 rounded text-xs bg-gold-400/10 text-gold-300">
-                              {k}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="mb-4">
-                        <h4 className="text-xs tracking-widest uppercase text-gold-300/60 mb-2">Symbolism</h4>
-                        <p className="text-coolgray text-sm">{cardData.symbolism}</p>
-                      </div>
-
-                      <div>
-                        <h4 className="text-xs tracking-widest uppercase text-gold-300/60 mb-2">Guidance</h4>
-                        <p className="text-moonlight text-sm italic">{cardData.advice}</p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div className="glass p-5 sm:p-6 rounded-xl">
-                <h3 className="font-serif-display text-lg text-gold-300 mb-3">Reading Summary</h3>
-                <p className="text-moonlight text-sm leading-relaxed">
-                  Your {cards.category.toLowerCase()} reading reveals {cards.cards.length}
-                  {cards.cards.length === 1 ? "" : "s"} card{cards.cards.length > 1 ? "s" : ""} of insight.{" "}
-                  {cards.cards.map((c) => {
-                    const cd = getCardById(c.cardId);
-                    return cd ? cd.name : "";
-                  }).join(", ")}.
-                  {" "}Each card speaks to a unique facet of your journey, offering guidance where it is most needed.
-                </p>
-              </div>
-            </motion.div>
-          )}
-
-          {showSummary && (
-            <motion.div
-              className="flex justify-center gap-4 flex-wrap"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
-            >
-              <button
-                onClick={() => router.push("/readings")}
-                className="px-6 py-3 rounded-full border border-gold-400/30 text-gold-300 text-sm tracking-wider hover:border-gold-400/60 transition-all"
-              >
-                New Reading
-              </button>
-              <button
-                onClick={handleShare}
-                className="px-6 py-3 rounded-full border border-gold-400/30 text-gold-300 text-sm tracking-wider hover:border-gold-400/60 transition-all"
-              >
-                Share Reading
-              </button>
-              <button
-                onClick={() => router.push("/readings/history")}
-                className="px-6 py-3 rounded-full border border-gold-400/30 text-gold-300 text-sm tracking-wider hover:border-gold-400/60 transition-all"
-              >
-                My Readings
-              </button>
-            </motion.div>
-          )}
-        </div>
-      </main>
-    </>
-  );
+  return <ReadingDetail id={id} readingType={type} />;
 }

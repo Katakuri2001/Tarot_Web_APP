@@ -716,9 +716,15 @@ export default function MiniAppDrawing({ initialType, embedded = false }: Props)
               </span>
             </motion.div>
 
-            {/* Card display */}
+            {/* Card display.
+                The drawn cards share the available width instead of using
+                fixed pixel sizes: the previous fixed w-28 slot with a w-36
+                card overflowed the slot and lapped onto its neighbour — by
+                48px on a 440px screen and 168px on a 320px one. flex-1 with
+                min-w-0 divides the row evenly, and the 2:3 aspect ratio keeps
+                the cards proportional however narrow the screen gets. */}
             <motion.div
-              className="flex justify-center gap-3 sm:gap-4 my-4 px-4"
+              className="w-full flex justify-center items-start gap-2 sm:gap-3 my-4 px-4"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2, duration: 0.5 }}
@@ -729,7 +735,7 @@ export default function MiniAppDrawing({ initialType, embedded = false }: Props)
                 return (
                   <motion.div
                     key={sc.cardId}
-                    className="w-28 h-40 sm:w-36 sm:h-52"
+                    className="flex-1 min-w-0 max-w-[184px] aspect-[2/3]"
                     initial={{ opacity: 0, y: 20, scale: 0.8 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     transition={{ delay: 0.3 + i * 0.15, duration: 0.5 }}
@@ -738,7 +744,7 @@ export default function MiniAppDrawing({ initialType, embedded = false }: Props)
                       card={data}
                       orientation={sc.orientation}
                       isRevealed={true}
-                      size="md"
+                      size="fluid"
                     />
                   </motion.div>
                 );

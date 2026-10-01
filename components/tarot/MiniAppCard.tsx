@@ -26,7 +26,7 @@ interface MiniAppCardProps {
   isDimmed?: boolean;
   isClickable?: boolean;
   index?: number;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "fluid";
   position?: CardPosition;
   style?: React.CSSProperties;
   className?: string;
@@ -44,6 +44,12 @@ const sizeClasses = {
   sm: "w-28 h-40",
   md: "w-36 h-52",
   lg: "w-44 h-64",
+  /**
+   * Fill the parent instead of using a fixed size. Used where a row of cards
+   * has to fit an unknown number of cards into a known width (the result
+   * screen), so fixed pixel sizes cannot overlap.
+   */
+  fluid: "w-full h-full",
 };
 
 export default function MiniAppCard({

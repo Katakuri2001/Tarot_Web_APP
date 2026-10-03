@@ -3,7 +3,10 @@ import NavBar from "@/components/NavBar";
 import IntroOverlay from "./IntroOverlay";
 
 /**
- * Server component.
+ * Server component — and now the *only* layout under /readings: it owns the
+ * nav (`<NavBar />`) and the single `<main>` landmark for every route in this
+ * segment, so no page here renders its own. A sibling app/readings/[type]/layout.tsx
+ * used to render a second nav on top of this one; it has been removed.
  *
  * This must stay a server component: app/readings/[type]/page.tsx calls
  * notFound() for an unknown reading type, and a "use client" parent here

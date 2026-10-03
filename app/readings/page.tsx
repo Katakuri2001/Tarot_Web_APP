@@ -2,7 +2,6 @@
 
 import { motion } from "framer-motion";
 import StarBackground from "@/components/StarBackground";
-import Navigation from "@/components/Navigation";
 import MiniAppDrawing from "@/components/tarot/MiniAppDrawing";
 import { useSoundEnabled } from "@/hooks/useShared";
 
@@ -12,9 +11,12 @@ export default function ReadingsPage() {
   return (
     <>
       <StarBackground />
-      <Navigation />
 
-      <main className="relative z-10 min-h-screen pt-24 px-4 pb-24">
+      {/* A <div>, not a <main>: app/readings/layout.tsx already owns that
+          landmark for every route under /readings, so a second one here would
+          nest inside it (invalid HTML). The layout also supplies the nav this
+          page no longer renders. */}
+      <div className="relative z-10 min-h-screen pt-24 px-4 pb-24">
         <div className="max-w-5xl mx-auto">
           <motion.div
             className="text-center mb-16"
@@ -71,7 +73,7 @@ export default function ReadingsPage() {
             ))}
           </div>
         </div>
-      </main>
+      </div>
     </>
   );
 }

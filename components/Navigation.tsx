@@ -35,8 +35,15 @@ export default function Navigation() {
       role="navigation"
       aria-label="Main navigation"
     >
-      <div className="px-4 md:px-8 py-3 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity" aria-label="Velora Home">
+      {/* py-2 (not py-3): every control below is now a 44px touch target, so a
+          taller container would push the bar past the pt-16/pt-20 top padding
+          the pages use and slide their content underneath it. */}
+      <div className="px-4 md:px-8 py-2 flex items-center justify-between">
+        <Link
+          href="/"
+          className="flex items-center min-h-[44px] gap-2 hover:opacity-80 transition-opacity"
+          aria-label="Velora Home"
+        >
           <Logo size="compact" />
         </Link>
 
@@ -46,7 +53,7 @@ export default function Navigation() {
             <Link
               key={link.href}
               href={link.href}
-              className={`text-sm transition-colors duration-300 ${
+              className={`text-sm inline-flex items-center justify-center min-h-[44px] min-w-[44px] transition-colors duration-300 ${
                 pathname === link.href
                   ? "text-gold-300 font-medium"
                   : "text-moonlight hover:text-gold-300"
@@ -61,7 +68,7 @@ export default function Navigation() {
 
         {/* Mobile toggle */}
         <button
-          className="md:hidden text-warmwhite p-2"
+          className="md:hidden text-warmwhite min-h-[44px] min-w-[44px] flex items-center justify-center"
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label={mobileOpen ? "Close menu" : "Open menu"}
           aria-expanded={mobileOpen}
@@ -86,7 +93,7 @@ export default function Navigation() {
             <Link
               key={link.href}
               href={link.href}
-              className={`text-sm transition-colors ${
+              className={`text-sm flex items-center min-h-[44px] transition-colors ${
                 pathname === link.href ? "text-gold-300" : "text-moonlight"
               }`}
               onClick={() => setMobileOpen(false)}

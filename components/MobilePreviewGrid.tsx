@@ -66,7 +66,7 @@ export default function MobilePreviewGrid() {
               <>
                 <a
                   href={route.path}
-                  className="font-serif-display text-base text-warmwhite hover:text-gold-300 transition-colors"
+                  className="font-serif-display text-base text-warmwhite hover:text-gold-300 transition-colors inline-flex items-center min-h-[44px] min-w-[44px]"
                 >
                   {route.title}
                 </a>

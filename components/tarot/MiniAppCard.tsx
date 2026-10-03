@@ -103,7 +103,16 @@ export default function MiniAppCard({
       }
       role="button"
       tabIndex={isClickable ? 0 : -1}
-      aria-label={`${card.name}, ${orientation}`}
+      /* Never announce a face-down card's identity: the name is the answer the
+         whole reading builds toward, and the label was previously exposed even
+         while the back of the card was showing. Only swap in the real name once
+         the card has actually flipped. */
+      aria-label={
+        isRevealed
+          ? `${card.name}, ${orientation}`
+          : `Face-down tarot card ${index + 1}${isSelected ? ", selected" : ""}`
+      }
+      aria-pressed={isSelected}
       onKeyDown={(e) => {
         if ((e.key === "Enter" || e.key === " ") && isClickable) {
           e.preventDefault();
@@ -122,10 +131,14 @@ export default function MiniAppCard({
           <CardBack />
         </div>
 
-        {/* Card Front */}
+        {/* Card Front. aria-hidden while face-down: backface-visibility only
+            hides these pixels, it does not remove them from the accessibility
+            tree, so the name/keywords below would otherwise be read out from a
+            card the visitor has not yet seen. */}
         <div
           className="absolute inset-0 backface-hidden"
           style={{ transform: "rotateY(180deg)", backfaceVisibility: "hidden" }}
+          aria-hidden={!isRevealed}
         >
           <CardFront
             name={card.name}

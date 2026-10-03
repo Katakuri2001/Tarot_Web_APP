@@ -8,7 +8,7 @@ export function SoundToggle() {
   return (
     <button
       onClick={toggle}
-      className="text-moonlight hover:text-gold-300 transition-colors p-1"
+      className="text-moonlight hover:text-gold-300 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
       aria-label={enabled ? "Sound on" : "Sound off"}
       title={enabled ? "Sound on" : "Sound off"}
     >

@@ -567,7 +567,7 @@ export default function MiniAppDrawing({ initialType, embedded = false }: Props)
         ) : (
           <button
             onClick={() => router.push("/")}
-            className="text-moonlight hover:text-gold-300 transition-colors p-2 -ml-2"
+            className="text-moonlight hover:text-gold-300 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center -ml-2"
             aria-label="Go back"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

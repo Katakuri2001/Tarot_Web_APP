@@ -49,7 +49,14 @@ export default function TarotCard({
       whileFocus={{ scale: 1.03, y: -5 }}
       tabIndex={tabIndex}
       role="button"
-      aria-label={ariaLabel || `Tarot card: ${card.name}`}
+      /* Neutral until flipped — see the same note in MiniAppCard. A caller
+         may still force a label, so ?? (not ||) keeps an explicit "" honest. */
+      aria-label={
+        ariaLabel ??
+        (isRevealed
+          ? `Tarot card: ${card.name}, ${orientation}`
+          : `Face-down tarot card${isSelected ? ", selected" : ""}`)
+      }
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
@@ -68,10 +75,11 @@ export default function TarotCard({
           <CardBack />
         </div>
 
-        {/* Card Front */}
+        {/* Card Front. aria-hidden while face-down — see MiniAppCard. */}
         <div
           className="absolute inset-0 backface-hidden"
           style={{ transform: "rotateY(180deg)", backfaceVisibility: "hidden" }}
+          aria-hidden={!isRevealed}
         >
           <CardFront
             name={card.name}

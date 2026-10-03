@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import StarBackground from "@/components/StarBackground";
-import Navigation from "@/components/Navigation";
 import TarotCard from "@/components/tarot/TarotCard";
 import { getCardById, getCardInterpretation, getPositionMeaning, getReadingTypeLabel } from "@/utils/tarotUtils";
 import { getReadingsFromStorage } from "@/services/readingService";
@@ -105,9 +104,11 @@ export default function ReadingDetail({ id, readingType }: ReadingDetailProps) {
   return (
     <>
       <StarBackground />
-      <Navigation />
-
-      <main className="relative z-10 min-h-screen pt-16 sm:pt-20 px-4 pb-16 safe-top safe-bottom">
+      {/* A <div>, not a <main>: app/readings/layout.tsx already owns that
+          landmark for every route under /readings, so a second one here would
+          nest inside it (invalid HTML). The layout also supplies the nav this
+          file no longer renders. */}
+      <div className="relative z-10 min-h-screen pt-16 sm:pt-20 px-4 pb-16 safe-top safe-bottom">
         <div className="max-w-5xl mx-auto">
           <motion.div
             className="text-center mb-12"
@@ -142,7 +143,7 @@ export default function ReadingDetail({ id, readingType }: ReadingDetailProps) {
                     card={cardData}
                     orientation={card.orientation as Orientation}
                     isRevealed={isRevealed}
-                    aria-label={`${cardData.name}, ${card.orientation}`}
+                    tabIndex={-1}
                   />
 
                   {isRevealed && (
@@ -263,7 +264,7 @@ export default function ReadingDetail({ id, readingType }: ReadingDetailProps) {
             </motion.div>
           )}
         </div>
-      </main>
+      </div>
     </>
   );
 }

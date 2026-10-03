@@ -15,14 +15,21 @@ export function useReducedMotion(): boolean {
 }
 
 export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T | ((prev: T) => T)) => void] {
-  const [stored, setStored] = useState<T>(() => {
+  // Start from initialValue on both server and client so the first client
+  // render matches the server HTML. The stored value is read in an effect
+  // below, after hydration has completed.
+  const [stored, setStored] = useState<T>(initialValue);
+
+  useEffect(() => {
     try {
       const item = window.localStorage.getItem(key);
-      return item ? JSON.parse(item) : initialValue;
+      if (item) {
+        setStored(JSON.parse(item));
+      }
     } catch {
-      return initialValue;
+      // Silently fall back to initialValue
     }
-  });
+  }, [key]);
 
   const setValue = useCallback(
     (value: T | ((prev: T) => T)) => {

@@ -38,7 +38,14 @@ export default function TarotCard({
 
   return (
     <motion.div
-      className={`perspective-1000 cursor-pointer ${className}`}
+      /* Both faces below are `absolute inset-0`, so nothing inside this card
+         contributes height — the root has to supply it or the card collapses
+         to zero and its face stretches to a 2px sliver. 2/3 matches CardBack's
+         viewBox ("0 0 200 300"), which is the proportion the art is drawn at.
+         It lives in the base class rather than at the call site so a caller
+         that passes no size still gets a card that renders; passing a className
+         with its own sizing overrides this. */
+      className={`perspective-1000 cursor-pointer aspect-[2/3] ${className}`}
       style={{ ...style }}
       onClick={onClick}
       onHoverStart={onHover}

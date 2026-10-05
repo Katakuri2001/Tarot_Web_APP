@@ -115,7 +115,10 @@ Tarot Website/
 ├── admin/                        # Admin panel (separate build)
 ├── node_modules/
 ├── .next/                        # Build output
-├── public/                       # Static assets (favicon, icons)
+├── public/                       # DOES NOT EXIST — never tracked in this repo.
+│                                 #   Do not reference /favicon.ico or /icons/*
+│                                 #   from metadata; app/icon.svg is the icon
+│                                 #   Next serves and it takes precedence.
 ├── wrangler.toml                 # Cloudflare Pages config
 ├── wrangler.admin.toml           # Cloudflare Worker config
 ├── next.config.js                # Next.js config
@@ -511,26 +514,61 @@ The application handles errors gracefully:
 npm run dev          # Start dev server
 npm run build        # Production build
 npm run lint -- --quiet  # Lint without interactive prompt
-npx tsc --noEmit     # Type check
+npm run typecheck    # tsc --noEmit
+npm run test         # unit (vitest) + e2e (playwright)
+npm run test:unit    # pure logic only, fast
+npm run test:e2e     # browser regressions, builds and starts a server
 ```
+
+`test:e2e` runs against a **production** build on port 3210, not `next dev`,
+because `reactStrictMode` is on and dev double-invokes effects. It also wipes
+`.next` first: Next caches Tailwind's purge output, and a stale stylesheet
+served against fresh markup produces false results.
 
 ### Testing the Drawing Flow
 ```
-Open → Select reading type → Shuffle → Select card → Reveal → Read result → Draw Again → Select another card → Reveal again
+Open → Choose a category → Category confirmation → Shuffle →
+Card 1 (Current Energy) → Card 2 (Influence / Challenge) →
+Card 3 (Guidance / Direction) → Each card reveals and flies into its slot →
+Card-by-card reading → Overall reading → Draw Again
 ```
 
+### Test Coverage
+
+| Layer | Runner | Covers |
+| --- | --- | --- |
+| `tests/unit/**` | vitest (node) | Reading composition, spread resolution, card rendering |
+| `tests/e2e/**` | Playwright (chromium) | Layout, hit-testing, sessionStorage, routing, assets |
+
+Browser tests exist because most of the defects these guard against are
+invisible to typecheck, lint and build — they only appear once something is
+measured or tapped.
+
 ### Validation Checklist
-- [x] `npx tsc --noEmit` passes (frontend)
-- [ ] `npm run build` passes
-- [ ] `npm run lint` passes
-- [ ] All reading types work (Daily, Love, Career, General)
-- [ ] Card shuffle animation plays correctly
-- [ ] Card selection works on mobile (touch)
-- [ ] Card flip animation plays
-- [ ] Result screen displays correctly
-- [ ] Draw Again creates a new reading
-- [ ] No duplicate cards on consecutive draws (recent-result avoidance)
-- [ ] `prefers-reduced-motion` is respected
-- [ ] Touch targets are ≥ 44px
-- [ ] No horizontal scrolling on 360px screens
-- [ ] Stitch Agent Skills documented and integrated
+
+Verified by `npm run typecheck && npm run lint && npm run build && npm run test`
+unless marked otherwise. See `docs/BUG_REPORT.md` for the defect each item
+maps to.
+
+- [x] `npm run typecheck` passes
+- [x] `npm run build` passes
+- [x] `npm run lint` passes (3 pre-existing warnings, all in untouched files)
+- [x] All legacy reading routes resolve (`/readings`, `/readings/love`,
+      `/readings/career`, `/readings/daily`, `/readings/general`)
+- [x] Unknown reading types return a real 404
+- [x] Card shuffle animation plays correctly
+- [x] Card selection works on mobile (touch)
+- [x] Card flip animation plays
+- [x] Result screen displays correctly
+- [x] Draw Again creates a new reading
+- [x] No duplicate cards within a spread, or against the previous spread
+- [x] `prefers-reduced-motion` is respected
+- [x] Touch targets are ≥ 44px (every deck card, 360/390/412px)
+- [x] No horizontal scrolling on 320–412px, on every route
+- [x] A cold session can complete a reading from any `/readings` deep link
+- [x] A saved reading's detail page uses the category it was drawn under
+- [x] No failing asset requests on any route
+- [x] Stitch Agent Skills documented and integrated
+- [ ] Landscape layout — out of scope, Mini App is portrait only
+- [ ] 320px deck — five cards cannot all reach 44px there; see
+      `NUM_VISIBLE` in `components/tarot/MiniAppDrawing.tsx`

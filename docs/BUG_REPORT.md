@@ -46,21 +46,51 @@ Playwright:
 
 ## 2. Findings at a glance
 
-| # | Sev | Area | Summary |
-| --- | --- | --- | --- |
-| 1 | **CRITICAL** | routing | Every `/readings/*` route is permanently unclickable on a fresh session |
-| 2 | **CRITICAL** | layout | `<NavBar>` rendered twice on `/readings/[type]/*` |
-| 3 | HIGH | content | Overall reading double-frames every card and silently drops content |
-| 4 | HIGH | layout | "CARD n" status text renders on top of the deck |
-| 5 | HIGH | layout | `/` overflows horizontally at every mobile width |
-| 6 | MEDIUM | a11y | Outer deck cards expose only ~18–26 px of tappable area |
-| 7 | MEDIUM | ui | Major Arcana prints the card number twice |
-| 8 | MEDIUM | assets | `public/` missing — 5 asset 404s, 4 of them on every page |
-| 9 | MEDIUM | ui | Spread slot captions wrap and go ragged |
-| 10 | MEDIUM | routing | `app/readings/daily/page.tsx` shadows `[type]` for the `daily` segment |
-| 11 | MEDIUM | data | Saved-reading detail page contradicts the Mini App result |
-| 12 | LOW | correctness | `statusTextTop` mixes CSS units and goes stale on resize |
-| 13 | LOW | correctness | Leaked `setTimeout` handles in the category picker |
+All 13 findings are fixed, plus one discovered while fixing them (#14). Every
+fix is backed by a test that was verified to fail against the unfixed code.
+
+| # | Sev | Area | Summary | Status |
+| --- | --- | --- | --- | --- |
+| 1 | **CRITICAL** | routing | Every `/readings/*` route is permanently unclickable on a fresh session | fixed `e41a296` |
+| 2 | **CRITICAL** | layout | `<NavBar>` rendered up to 3× on `/readings/[type]/*` | fixed `e41a296` |
+| 3 | HIGH | content | Overall reading double-frames every card and silently drops content | fixed `34cde8d` |
+| 4 | HIGH | layout | "CARD n" status text renders on top of the deck | fixed `1e4269c` |
+| 5 | HIGH | layout | `/` overflows horizontally at every mobile width | fixed `c5dd1c1` |
+| 6 | MEDIUM | a11y | Outer deck cards expose only ~18–26 px of tappable area | fixed `0434937` |
+| 7 | MEDIUM | ui | Major Arcana prints the card number twice | fixed `0434937` |
+| 8 | MEDIUM | assets | `public/` missing; homepage image 404s (finding corrected) | fixed `a4158d8` |
+| 9 | MEDIUM | ui | Spread slot captions wrap and go ragged | fixed `8a8cfda` |
+| 10 | MEDIUM | routing | `app/readings/daily/page.tsx` shadows `[type]` for the `daily` segment | fixed `779ce92` |
+| 11 | MEDIUM | data | Saved-reading detail page contradicts the Mini App result | fixed `4948160` |
+| 12 | LOW | correctness | `statusTextTop` mixes CSS units and goes stale on resize | fixed `1e4269c` |
+| 13 | LOW | correctness | Leaked `setTimeout` handles in the category picker | fixed `a4158d8` |
+| 14 | MEDIUM | ux | Homepage intro could not be skipped (`skipReady` dead state) | fixed `3f77d38` |
+
+### 14. MEDIUM — the homepage intro could not be skipped
+
+**File:** `components/brand/IntroAnimation.tsx:15, 190`
+
+```tsx
+const [skipReady, setSkipReady] = useState(false);
+// …
+{skipReady && phase >= 4 && <button aria-label="Skip intro">Skip</button>}
+```
+
+`setSkipReady` was never called anywhere in the file — the state was dead, so
+the Skip button could never render. The only way past the intro was to sit
+through all 3.6 s of it.
+
+Fixing it needed two corrections that the first attempt got wrong:
+
+- Scheduling `setSkipReady(true)` at 4000 ms did nothing, because the sequence
+  calls `markIntroPlayed()` + `onComplete()` at 3200 ms, which unmounts the
+  component. A Skip offered after completion can never be pressed. It fires at
+  1600 ms instead.
+- The render gate had to change too. `skipReady && phase >= 4` only opened the
+  window between phase 4 (2400 ms) and completion (3200 ms) — 800 ms to hit a
+  small target. Gating on `skipReady` alone gives the full 1.6 s.
+
+Found while inspecting the intro overlay for bug #1, not on purpose.
 
 ---
 
@@ -498,19 +528,76 @@ targets, #8 asset loading).
 
 ---
 
-## 6. Suggested fix order
+## 6. What was done
 
-1. **#1** blocking overlay — the whole `/readings/*` surface is inoperable
-2. **#2** duplicate nav — one-line removal, same files as #1
-3. **#5** homepage overflow — one `overflow-hidden`, breaks a documented
-   acceptance criterion
-4. **#4 + #12** status text overlap — same code, fix together
-5. **#3** overall reading — pure function, isolated, high user impact
-6. **#11** detail page category loss — silent data inconsistency
-7. **#8** missing `public/` — decide restore-vs-remove
-8. **#10** dead `daily` route — small routing decision
-9. **#6** touch targets — needs a real design decision on the dome
-10. **#7, #9, #13** — cosmetic and cleanup
+Fix order followed the list below, which is the order the work was done in:
 
-Then add the test coverage from §5 before the next change lands, so this class
-of defect is caught by a gate rather than by inspection.
+| Commit | Findings |
+| --- | --- |
+| `e41a296` | #1 blocking overlay, #2 duplicate nav |
+| `34cde8d` | #3 overall reading |
+| `c5dd1c1` | #5 homepage overflow |
+| `0434937` | #6 touch targets, #7 duplicated card number |
+| `1e4269c` | #4 status text overlap, #12 stale/units |
+| `4948160` | #11 detail page category loss |
+| `779ce92` | #10 static page shadowing the mapping |
+| `8a8cfda` | #9 slot captions |
+| `3f77d38` | #14 intro could not be skipped |
+| `a4158d8` | #8 missing `public/`, #13 leaked timer |
+
+Every fix was preceded by a failing test and verified to fail against the
+unfixed code. #10 is the exception and is labelled as such: it has no
+observable behaviour change by design, so it ships with a characterisation test
+instead.
+
+### Test coverage added
+
+`vitest` for pure logic, `@playwright/test` for anything depending on real
+layout, hit-testing or sessionStorage — none of which a unit test can reach.
+60 e2e and 45 unit tests, plus `npm run typecheck` and `npm run test`.
+
+Two things worth knowing before the next change:
+
+- **`playwright.config.ts` does a clean `rm -rf .next` before building.** Next
+  caches Tailwind's purge output, and a stale stylesheet served against fresh
+  markup produced two convincing false results while fixing #5: computed
+  `filter` read `none` on the glow while the class was present, and a 7 px
+  overflow appeared at 320 px only. Both vanished after a clean build.
+- **`reuseExistingServer` will reuse a stale server.** It bit twice during this
+  work — a leftover `next start` on the port made a fix look like it had done
+  nothing. Kill the port before trusting a result.
+
+### Three errors in this report, corrected in place
+
+Recorded rather than quietly rewritten, because each one produced a test that
+passed for the wrong reason:
+
+1. **#2** said navigation was rendered "in two places". It was five; the saved
+   reading detail route stacked three nav landmarks, not two.
+2. **#4** blamed the dome constants. The real cause was `statusTextTop`
+   reading `getContainerSize()` from a ref during render and silently using its
+   hardcoded `{360, 600}` fallback on the first card.
+3. **#8** claimed five 404s, four per page load. Only `/cards/back.jpg` was
+   requested; the icon URLs were shadowed by `app/icon.svg`.
+
+A fourth is about the tests rather than the findings: the touch-target and
+status-text metrics were both wrong on the first attempt — one measured bounding
+boxes instead of reachable strips and went green against a live bug, the other
+demanded a landscape fix that contradicts the project's own "portrait only"
+constraint.
+
+### Not addressed
+
+- **`public/` still does not exist.** #8 removes the code that referenced it;
+  it does not create the directory. `AGENTS.md` and `test.md` both still
+  document `public/` as containing `favicon.ico`, `icons/` and `cards/`. If
+  those assets exist in a deployment artefact, restore them; otherwise correct
+  the docs.
+- **Below ~340 px viewport width, five deck cards cannot all reach 44 px.** The
+  geometry is recorded in `NUM_VISIBLE`. Supporting 320 px means dropping to
+  four candidates, not shrinking further.
+- **"Daily Reading — one card" copy is wrong.** `/readings` and the homepage
+  still describe a 1-card reading, but the category-first flow always draws
+  three. That is product copy, so it was flagged rather than changed.
+- **No test covers bug #13.** Its impact was latent rather than visible, and a
+  DOM test harness was not worth the dependency.

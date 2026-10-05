@@ -2,7 +2,6 @@
 
 import { motion } from "framer-motion";
 import StarBackground from "@/components/StarBackground";
-import Navigation from "@/components/Navigation";
 import MiniAppDrawing from "@/components/tarot/MiniAppDrawing";
 import { useSoundEnabled } from "@/hooks/useShared";
 
@@ -12,7 +11,6 @@ export default function ReadingsPage() {
   return (
     <>
       <StarBackground />
-      <Navigation />
 
       <main className="relative z-10 min-h-screen pt-24 px-4 pb-24">
         <div className="max-w-5xl mx-auto">

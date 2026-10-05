@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import StarBackground from "@/components/StarBackground";
-import Navigation from "@/components/Navigation";
 import { tarotCards } from "@/data/tarotCards";
 import { getReadingsFromStorage } from "@/services/readingService";
 import { getReadingTypeLabel } from "@/utils/tarotUtils";
@@ -23,7 +22,6 @@ export default function MyReadingsPage() {
   return (
     <>
       <StarBackground />
-      <Navigation />
 
       <main className="relative z-10 min-h-screen pt-16 sm:pt-20 px-4 pb-16 safe-top safe-bottom">
         <div className="max-w-3xl mx-auto">

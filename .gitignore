@@ -8,9 +8,6 @@ node_modules
 *.env.production.local
 .next/
 /.wrangler/
-/src/
-/tests/
-/__tests__/
 tsconfig.tsbuildinfo
 .dev.vars*
 admin/dist/

@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import StarBackground from "@/components/StarBackground";
-import Navigation from "@/components/Navigation";
 import TarotCard from "@/components/tarot/TarotCard";
 import { getCardById, getCardInterpretation, getPositionMeaning, getReadingTypeLabel } from "@/utils/tarotUtils";
 import { getReadingsFromStorage } from "@/services/readingService";
@@ -105,7 +104,6 @@ export default function ReadingDetail({ id, readingType }: ReadingDetailProps) {
   return (
     <>
       <StarBackground />
-      <Navigation />
 
       <main className="relative z-10 min-h-screen pt-16 sm:pt-20 px-4 pb-16 safe-top safe-bottom">
         <div className="max-w-5xl mx-auto">

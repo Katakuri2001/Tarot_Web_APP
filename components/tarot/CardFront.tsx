@@ -34,7 +34,7 @@ export default function CardFront({ name, keywords, arcana, suit, number, orient
   const symbol = suitSymbol[suit] || "✦";
 
   return (
-    <div className="relative w-full h-full flex flex-col" style={{ transform: isReversed ? "scaleX(-1)" : undefined }}>
+    <div className="relative w-full h-full flex flex-col">
       <div
         className="flex-1 rounded-lg overflow-hidden relative"
         style={{
@@ -52,32 +52,40 @@ export default function CardFront({ name, keywords, arcana, suit, number, orient
           </span>
         </div>
 
-        {/* Center illustration area */}
+        {/* Center illustration area. A reversed card is shown with its
+            emblem rotated 180° (never mirrored, which would make the text
+            unreadable). The card name stays upright for readability. */}
         <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
           {/* Glow ring */}
           <motion.div
-            className="w-24 h-24 sm:w-28 sm:h-28 rounded-full mb-2 flex items-center justify-center relative"
-            style={{ background: `radial-gradient(circle, ${color}15 0%, transparent 70%)` }}
+            className="w-12 h-12 rounded-full mb-1 flex items-center justify-center relative"
+            style={{
+              background: `radial-gradient(circle, ${color}15 0%, transparent 70%)`,
+              transform: isReversed ? "rotate(180deg)" : undefined,
+            }}
             animate={!reducedMotion ? { opacity: [0.4, 0.8, 0.4] } : {}}
             transition={{ duration: 4, repeat: Infinity }}
           >
-            <span className="text-3xl" style={{ opacity: 0.7, color }}>
+            <span className="text-xl" style={{ opacity: 0.7, color }}>
               {symbol}
             </span>
           </motion.div>
 
           {/* Card name */}
-          <h3 className="font-serif-display text-base text-center leading-tight" style={{ color: "rgba(240,235,230,0.9)", fontWeight: 400 }}>
+          <h3 className="font-serif-display text-[13px] text-center leading-tight px-1" style={{ color: "rgba(240,235,230,0.9)", fontWeight: 400 }}>
             {name}
           </h3>
         </div>
 
         {/* Bottom info */}
-        <div className="absolute bottom-3 left-3 right-3 flex justify-between items-center">
-          <span className="text-xs" style={{ opacity: 0.5, color: "rgba(138,133,149,0.7)" }}>
+        <div className="absolute bottom-2.5 left-3 right-3 flex justify-between items-center gap-1">
+          <span
+            className="text-[9px] truncate"
+            style={{ opacity: 0.5, color: "rgba(138,133,149,0.9)" }}
+          >
             {keywords.slice(0, 2).join(" • ")}
           </span>
-          <span className="font-serif-display text-xs" style={{ opacity: 0.4, color }}>
+          <span className="font-serif-display text-[10px] shrink-0" style={{ opacity: 0.4, color }}>
             {String(number).padStart(2, "0")}
           </span>
         </div>

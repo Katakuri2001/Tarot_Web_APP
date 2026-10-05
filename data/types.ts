@@ -2,6 +2,15 @@ export type Arcana = "major" | "wands" | "cups" | "swords" | "pentacles";
 export type Orientation = "upright" | "reversed";
 export type ReadingType = "daily" | "love" | "career" | "general";
 
+/** Category-first reading path chosen before any cards are drawn. */
+export type TarotCategory = "love" | "health" | "business" | "wealth" | "travel";
+
+/** Fixed role each card plays within the 3-card spread. */
+export type TarotPosition =
+  | "current-energy"
+  | "influence-challenge"
+  | "guidance-direction";
+
 export interface TarotCardData {
   id: string;
   name: string;
@@ -19,6 +28,13 @@ export interface TarotCardData {
   generalReversed: string;
   advice: string;
   symbolism: string;
+}
+
+/** One revealed position of the 3-card spread. */
+export interface SpreadCard {
+  cardId: string;
+  orientation: Orientation;
+  position: TarotPosition;
 }
 
 export interface CardInReading {

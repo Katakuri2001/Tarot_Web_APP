@@ -2,10 +2,10 @@
 
 import { Suspense } from "react";
 import MiniAppDrawing from "@/components/tarot/MiniAppDrawing";
-import type { ReadingType } from "@/data/types";
+import type { TarotCategory } from "@/data/types";
 
 /** Client wrapper so the drawing experience can use hooks and effects. */
-export default function ReadingClient({ type }: { type: ReadingType }) {
+export default function ReadingClient({ initialCategory }: { initialCategory?: TarotCategory }) {
   return (
     <Suspense
       fallback={
@@ -14,7 +14,7 @@ export default function ReadingClient({ type }: { type: ReadingType }) {
         </div>
       }
     >
-      <MiniAppDrawing initialType={type} />
+      <MiniAppDrawing initialCategory={initialCategory} />
     </Suspense>
   );
 }

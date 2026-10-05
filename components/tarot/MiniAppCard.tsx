@@ -80,8 +80,8 @@ export default function MiniAppCard({
       className={`${sizeClasses[size]} ${positionClass} cursor-pointer select-none ${className}`}
       style={{
         ...style,
-        opacity: isDimmed ? 0.15 : 1,
-        filter: isDimmed ? "blur(3px) brightness(0.4)" : "none",
+        opacity: isDimmed ? 0.15 : (pos.opacity ?? 1),
+        filter: isDimmed ? "blur(3px) brightness(0.4)" : (pos.filter ?? "none"),
         zIndex: isSelected || isRevealed ? 100 : index,
         pointerEvents: isClickable ? "auto" : "none",
         touchAction: "manipulation",
@@ -93,8 +93,8 @@ export default function MiniAppCard({
         y: pos.y,
         rotate: pos.rotate,
         scale: isSelected ? 1.15 : pos.scale,
-        opacity: isDimmed ? 0.15 : 1,
-        filter: isDimmed ? "blur(3px) brightness(0.4)" : "none",
+        opacity: isDimmed ? 0.15 : (pos.opacity ?? 1),
+        filter: isDimmed ? "blur(3px) brightness(0.4)" : (pos.filter ?? "none"),
       }}
       transition={
         reducedMotion

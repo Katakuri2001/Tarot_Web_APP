@@ -6,7 +6,7 @@
 
 **What the project currently is:** A Next.js 14 application with 78 tarot cards, 3D card flipping animations, multiple reading types, and a Cloudflare Workers backend.
 
-**What the new Tarot Mini App experience is:** A streamlined, mobile-first card drawing experience: Choose reading type → Deck appears → Cards shuffle → User selects card → Card flip → Tarot result → Draw Again.
+**What the new Tarot Mini App experience is:** A streamlined, mobile-first 3-card drawing experience: Choose a category (Love / Health / Business / Wealth / Travel) → Category confirmation → Deck appears → Cards shuffle → User draws Card 1 (Current Energy) → Card 2 (Influence / Challenge) → Card 3 (Guidance / Direction) → Cards are revealed one by one and placed into the spread → Card-by-card category-aware reading → Overall reading → Draw Again.
 
 **Parts of the existing project being reused:**
 - All 78 tarot card data definitions (`data/tarotCards.ts`)
@@ -167,12 +167,53 @@ Uses Fisher-Yates shuffle (`shuffleArray` from `utils/tarotUtils.ts`):
 - Selects upright or reversed meaning based on orientation
 - Returns the interpretation string
 
-### Reading Types
+### Reading Types (legacy routes)
 
 - **Daily** — 1 card, general interpretation
 - **Love** — 3 cards (Past, Present, Future)
 - **Career** — 3 cards (Past, Present, Future)
 - **General** — 3 cards (Past, Present, Future)
+
+## Category System (Mini App)
+
+The Mini App is category-first. The user picks exactly one category before any
+card is drawn:
+
+```typescript
+type TarotCategory = "love" | "health" | "business" | "wealth" | "travel";
+```
+
+Each category maps onto the existing card data without duplicating it:
+- `love` → `loveUpright` / `loveReversed`
+- `business` → `careerUpright` / `careerReversed`
+- `health` / `wealth` / `travel` → `generalUpright` / `generalReversed`,
+  reframed by a category × position lead-in sentence.
+
+Category definitions, position metadata, interpretation composition and the
+deterministic overall-reading builder live in `utils/tarotReading.ts`:
+
+```typescript
+type TarotPosition =
+  | "current-energy"       // Card 1 — what energy surrounds the category
+  | "influence-challenge"  // Card 2 — what is influencing the situation
+  | "guidance-direction";  // Card 3 — what to consider next
+```
+
+`getCategoryCardReading(card, orientation, category, position)` returns the
+category-aware interpretation of a single card. Health language is
+deliberately non-diagnostic (wellbeing, rest, balance, self-care) with a
+visible disclaimer on the result screen.
+
+`composeOverallReading(category, cards, getCard, readingText)` weaves the
+three cards into one coherent, rule-based overall reading for the category.
+
+### 3-Card Spread Rules
+
+- The three cards in a spread are always unique (no card repeats within a reading).
+- Draw Again generates a full new 3-card spread; the three cards of the
+  immediately previous spread are excluded from the next one.
+- Across different readings, cards may appear again.
+- Card positions never change with the category; only the framing does.
 
 ### Reroll / Draw Again
 
@@ -346,7 +387,7 @@ From the Stitch `generate-design` skill:
 
 ### Stitch MCP Note
 
-The Stitch MCP server (`https://stitch.googleapis.com/mcp`) requires OAuth2 authentication, not API keys. The current `opencode.jsonc` configuration includes the Stitch MCP entry but needs OAuth2 credentials to function.
+The Stitch MCP server (`https://stitch.googleapis.com/mcp`) requires OAuth2 authentication, not API keys. The local environment does not have valid OAuth2 credentials, so live Stitch generation was unavailable. The Stitch **Agent Skills** in `.opencode/skills/` (especially `generate-design`, `enhance-prompt`, `manage-design-system`, `taste-design`) were still applied as the interaction/motion specification: see `docs/STITCH_EXPLORATION.md` for the enhanced prompts and the motion choreography decisions they produced. Once OAuth2 is configured, those prompts can be run as-is in Stitch to produce reference screens.
 
 ## Mini App Rules
 
@@ -440,14 +481,13 @@ The application uses React `useState`/`useEffect` (no external state management 
 
 ```typescript
 interface MiniAppState {
-  readingType: ReadingType;
-  selectedCard: TarotCardData | null;
-  orientation: Orientation;
-  reading: string | null;
-  isDrawing: boolean;
-  isRevealing: boolean;
-  recentCards: string[];
-  phase: "type-select" | "shuffling" | "selecting" | "revealing" | "result";
+  category: TarotCategory | null;
+  step: 0 | 1 | 2;                     // which card of the spread is drawn
+  drawn: SpreadCard[];                  // { cardId, orientation, position }[]
+  lastSpreadIds: string[];              // excluded from the next spread
+  phase:
+    | "category" | "intro" | "shuffling"
+    | "selecting" | "revealing" | "placing" | "result";
 }
 ```
 

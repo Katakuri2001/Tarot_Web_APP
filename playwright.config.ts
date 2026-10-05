@@ -37,7 +37,14 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "npm run build && npm run start -- -p 3210",
+    // Clean build, deliberately. Next caches Tailwind's purge output in
+    // .next/cache, so when a change adds or removes a utility class the build
+    // can serve a stale stylesheet against fresh markup. That produced a
+    // convincing false result here: computed `filter` read "none" on the glow
+    // while the class was present, and a 7px overflow appeared at 320px only.
+    // A slow suite is recoverable; a regression suite that can report a false
+    // PASS is not.
+    command: "rm -rf .next && npm run build && npm run start -- -p 3210",
     url: "http://localhost:3210",
     reuseExistingServer: !process.env.CI,
     timeout: 300_000,

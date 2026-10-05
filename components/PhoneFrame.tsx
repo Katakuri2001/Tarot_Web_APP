@@ -52,14 +52,33 @@ export default function PhoneFrame({
     <div className="flex justify-center">
       <div className="relative w-full max-w-full" style={{ maxWidth: `min(${d.width}px, 100%)` }}>
         {glow && (
-          <div
-            className="absolute rounded-[3.5rem] opacity-40 blur-2xl pointer-events-none"
-            style={{
-              inset: -40,
-              background:
-                "radial-gradient(circle at 50% 40%, rgba(212,184,90,0.20) 0%, rgba(26,10,62,0.28) 45%, transparent 70%)",
-            }}
-          />
+          /*
+           * The glow is inset -40px so its halo extends past the device, which
+           * used to widen the document by ~24px at every mobile width. Clipping
+           * the wrapper instead is not an option: the device body's bezel is a
+           * non-inset box-shadow on a sibling, so an ancestor clip would shear
+           * the ring off. So the glow gets its own clip layer, flush with the
+           * frame.
+           *
+           * Do not add overflow-clip-margin here. It widens the clip edge, and
+           * scrollable overflow is then measured against that wider edge — so a
+           * 40px margin reinstates exactly the 24px of horizontal scroll this
+           * fixes (verified in-browser: clip+margin = 414, plain clip = 390).
+           *
+           * Clipping flush is invisible anyway: the radial gradient reaches
+           * transparent at 70% of its radius, which lands ~153px from centre,
+           * while the clip edge sits ~179px out. Nothing is sheared.
+           */
+          <div className="absolute inset-0 overflow-clip" aria-hidden="true">
+            <div
+              className="absolute rounded-[3.5rem] opacity-40 blur-2xl pointer-events-none"
+              style={{
+                inset: -40,
+                background:
+                  "radial-gradient(circle at 50% 40%, rgba(212,184,90,0.20) 0%, rgba(26,10,62,0.28) 45%, transparent 70%)",
+              }}
+            />
+          </div>
         )}
 
         <div

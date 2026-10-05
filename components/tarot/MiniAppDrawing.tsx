@@ -438,6 +438,7 @@ export default function MiniAppDrawing({ initialCategory, embedded = false }: Pr
             setLastSpreadIds(nextDrawn.map((d) => d.cardId));
             const cardsForSave = nextDrawn.map((sc) => ({
               position: getPositionMeta(sc.position).label,
+              positionId: sc.position,
               cardName: getCardById(sc.cardId)?.name ?? "Unknown",
               cardId: sc.cardId,
               orientation: sc.orientation,
@@ -446,6 +447,10 @@ export default function MiniAppDrawing({ initialCategory, embedded = false }: Pr
               id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
               readingType: "general",
               category: categoryMeta?.label ?? "General",
+              // Stored alongside the label so the detail page can interpret
+              // the cards for the category the visitor actually chose, rather
+              // than falling back to the hardcoded "general" readingType.
+              categoryId: category ?? undefined,
               question: "",
               cards: cardsForSave,
               timestamp: Date.now(),
@@ -462,7 +467,7 @@ export default function MiniAppDrawing({ initialCategory, embedded = false }: Pr
         }, reducedMotion ? 350 : 750);
       }, reducedMotion ? 400 : 1300);
     },
-    [phase, selectedCardId, drawn, positionMeta, getContainerSize, sound, reducedMotion, startStep, step, categoryMeta, setSaved]
+    [phase, selectedCardId, drawn, positionMeta, getContainerSize, sound, reducedMotion, startStep, step, categoryMeta, category, setSaved]
   );
 
   const drawAgain = useCallback(() => {

@@ -6,12 +6,18 @@ import { motion } from "framer-motion";
 import StarBackground from "@/components/StarBackground";
 import TarotCard from "@/components/tarot/TarotCard";
 import { getCardById, getCardInterpretation, getPositionMeaning, getReadingTypeLabel } from "@/utils/tarotUtils";
+import {
+  resolveReadingCategory,
+  getSavedCardInterpretation,
+  getPositionIdFromLabel,
+  getCategoryMeta,
+} from "@/utils/tarotReading";
 import { getReadingsFromStorage } from "@/services/readingService";
 import { useSound } from "@/services/soundService";
 import { useReducedMotion } from "@/hooks/useShared";
 import { formatDate } from "@/utils/dateUtils";
 import type { Orientation } from "@/data/types";
-import type { ReadingType, SavedReading } from "@/data/types";
+import type { ReadingType, SavedReading, TarotCardData } from "@/data/types";
 
 interface ReadingDetailProps {
   /** Reading id, resolved from the visitor's localStorage. */
@@ -82,6 +88,25 @@ export default function ReadingDetail({ id, readingType }: ReadingDetailProps) {
 
   const dateStr = formatDate(new Date(cards.timestamp));
 
+  /*
+   * Category-aware interpretation, with a fallback to the readingType-based
+   * meaning for readings saved before categoryId existed or whose category
+   * cannot be resolved. Without this the page silently showed generic meanings
+   * for cards the visitor had just read category-specific ones for.
+   */
+  const resolvedCategory = resolveReadingCategory(cards);
+  const interpretCard = (cardData: TarotCardData, orientation: Orientation): string => {
+    const position = cardData && cards.cards.find((c) => c.cardId === cardData.id)?.position;
+    const categoryText = getSavedCardInterpretation(
+      cardData,
+      orientation,
+      resolvedCategory,
+      position ? getPositionIdFromLabel(position) ?? null : null
+    );
+    if (categoryText) return categoryText;
+    return getCardInterpretation(cardData, orientation, cards.readingType);
+  };
+
   const handleShare = async () => {
     const cardNames = cards.cards.map((c) => c.cardName).join(" • ");
     const text = `I drew ${cardNames} during a ${cards.category}. Find your own reading at Velora.`;
@@ -112,7 +137,16 @@ export default function ReadingDetail({ id, readingType }: ReadingDetailProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <p className="text-gold-300 tracking-widest uppercase text-xs mb-2">{getReadingTypeLabel(cards.readingType)}</p>
+            {/*
+              Show the category the visitor chose, not the hardcoded
+              "general" readingType every Mini App reading is saved with —
+              a Health reading used to be headed "GENERAL" here.
+            */}
+            <p className="text-gold-300 tracking-widest uppercase text-xs mb-2">
+              {resolvedCategory
+                ? getCategoryMeta(resolvedCategory).label
+                : getReadingTypeLabel(cards.readingType)}
+            </p>
             <p className="text-coolgray text-sm">{dateStr}</p>
           </motion.div>
 
@@ -184,7 +218,7 @@ export default function ReadingDetail({ id, readingType }: ReadingDetailProps) {
                 {cards.cards.map((card, i) => {
                   const cardData = getCardById(card.cardId);
                   if (!cardData) return null;
-                  const interpretation = getCardInterpretation(cardData, card.orientation as Orientation, cards.readingType);
+                  const interpretation = interpretCard(cardData, card.orientation as Orientation);
 
                   return (
                     <div key={i} className="glass p-4 sm:p-5 rounded-xl">

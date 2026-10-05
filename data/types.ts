@@ -55,10 +55,19 @@ export interface ReadingState {
 export interface SavedReading {
   id: string;
   readingType: ReadingType;
+  /** Human-readable category name, e.g. "Health". */
   category: string;
+  /**
+   * Canonical category id. Optional because readings saved before the
+   * category-first flow only carry the label above.
+   */
+  categoryId?: TarotCategory;
   question: string;
   cards: Array<{
+    /** Human-readable position label, e.g. "Current Energy". */
     position: string;
+    /** Canonical position id, when known. See TarotPosition. */
+    positionId?: TarotPosition;
     cardName: string;
     cardId: string;
     orientation: Orientation;

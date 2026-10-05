@@ -3,6 +3,7 @@ import type {
   TarotCardData,
   TarotCategory,
   TarotPosition,
+  SavedReading,
   SpreadCard,
 } from "@/data/types";
 
@@ -84,6 +85,65 @@ export function getPositionMeta(id: TarotPosition): PositionMeta {
   return (
     TAROT_POSITIONS.find((p) => p.id === id) ?? TAROT_POSITIONS[0]
   );
+}
+
+export function isTarotPosition(value: unknown): value is TarotPosition {
+  return (
+    typeof value === "string" &&
+    (TAROT_POSITIONS as readonly PositionMeta[]).some((p) => p.id === value)
+  );
+}
+
+/**
+ * Map a stored position label back to its id.
+ *
+ * Saved readings keep the human-readable label ("Current Energy"), and the
+ * in-draw spread slot captions shorten it further with
+ * `label.split(" /")[0]` ("Influence"). Both forms resolve to the same id, so
+ * a reading saved by either path can be interpreted consistently later.
+ */
+export function getPositionIdFromLabel(label: string): TarotPosition | undefined {
+  if (typeof label !== "string") return undefined;
+  const needle = label.trim().toLowerCase();
+  return TAROT_POSITIONS.find(
+    (p) =>
+      p.id === needle ||
+      p.label.toLowerCase() === needle ||
+      p.label.split(" /")[0].trim().toLowerCase() === needle
+  )?.id;
+}
+
+/**
+ * Best-effort category for a saved reading.
+ *
+ * Prefers the stored id, then falls back to matching the stored label, so
+ * readings persisted before `categoryId` existed still resolve. Returns null
+ * when neither matches, which tells the caller to fall back to the
+ * readingType-based interpretation rather than guess.
+ */
+export function resolveReadingCategory(
+  reading: Pick<SavedReading, "category" | "categoryId">
+): TarotCategory | null {
+  if (isTarotCategory(reading.categoryId)) return reading.categoryId;
+  const label = (reading.category ?? "").trim().toLowerCase();
+  const match = TAROT_CATEGORIES.find((c) => c.label.toLowerCase() === label);
+  return match?.id ?? null;
+}
+
+/**
+ * Category-aware interpretation for a card in an already-saved reading.
+ *
+ * Returns "" for anything it cannot resolve, so callers fall back to
+ * `getCardInterpretation` instead of rendering a blank or inventing text.
+ */
+export function getSavedCardInterpretation(
+  card: TarotCardData,
+  orientation: Orientation,
+  category: TarotCategory | null,
+  position: TarotPosition | null
+): string {
+  if (!isTarotCategory(category) || !isTarotPosition(position)) return "";
+  return getCategoryCardReading(card, orientation, category, position);
 }
 
 /**

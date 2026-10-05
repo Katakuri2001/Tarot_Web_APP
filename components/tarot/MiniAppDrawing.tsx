@@ -729,8 +729,8 @@ export default function MiniAppDrawing({ initialCategory, embedded = false }: Pr
                     />
                   ) : null}
                 </div>
-                <span className="text-[9px] tracking-widest uppercase text-muted">
-                  {p.label.split(" /")[0]}
+                <span className="text-[9px] tracking-widest uppercase text-muted truncate max-w-full">
+                  {p.shortLabel}
                 </span>
               </div>
             ))}

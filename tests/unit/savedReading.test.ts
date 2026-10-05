@@ -70,10 +70,26 @@ describe("getPositionIdFromLabel", () => {
   });
 
   it("tolerates the short forms used in the spread slot captions", () => {
-    // MiniAppDrawing renders `label.split(" /")[0]`.
     expect(getPositionIdFromLabel("Current Energy")).toBe("current-energy");
     expect(getPositionIdFromLabel("Influence")).toBe("influence-challenge");
     expect(getPositionIdFromLabel("Guidance")).toBe("guidance-direction");
+
+    // shortLabel, and the " /"-truncated form readings written before it
+    // existed may carry.
+    expect(getPositionIdFromLabel("Current")).toBe("current-energy");
+    expect(getPositionIdFromLabel("current-energy")).toBe("current-energy");
+  });
+
+  it("gives every position a shortLabel that fits the 64px slot", () => {
+    for (const p of TAROT_POSITIONS) {
+      // The 64px slot caption is ~9px uppercase with wide tracking. Two words
+      // is what wrapped "Current Energy" onto two lines.
+      expect(
+        p.shortLabel.split(/\s+/).length,
+        `${p.id} shortLabel should be a single word`
+      ).toBe(1);
+      expect(p.shortLabel.length).toBeLessThanOrEqual(12);
+    }
   });
 
   it("returns undefined for an unknown label", () => {

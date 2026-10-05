@@ -52,6 +52,14 @@ export interface PositionMeta {
   id: TarotPosition;
   step: "CARD 1" | "CARD 2" | "CARD 3";
   label: string;
+  /**
+   * Compact label for the 64px spread slot caption. The full `label` does not
+   * fit there — "Current Energy" wrapped to two lines while its siblings stayed
+   * on one, leaving the slot row on ragged baselines. Declared per position
+   * rather than derived with `label.split(" /")[0]`, which still produced a
+   * two-word label.
+   */
+  shortLabel: string;
   prompt: string;
   blurb: string;
 }
@@ -62,6 +70,7 @@ export const TAROT_POSITIONS: readonly PositionMeta[] = [
     id: "current-energy",
     step: "CARD 1",
     label: "Current Energy",
+    shortLabel: "Current",
     prompt: "Choose the card that draws your attention.",
     blurb: "What energy currently surrounds this area of your life?",
   },
@@ -69,6 +78,7 @@ export const TAROT_POSITIONS: readonly PositionMeta[] = [
     id: "influence-challenge",
     step: "CARD 2",
     label: "Influence / Challenge",
+    shortLabel: "Influence",
     prompt: "Choose another card.",
     blurb: "What is influencing the situation right now?",
   },
@@ -76,6 +86,7 @@ export const TAROT_POSITIONS: readonly PositionMeta[] = [
     id: "guidance-direction",
     step: "CARD 3",
     label: "Guidance / Direction",
+    shortLabel: "Guidance",
     prompt: "One final card.",
     blurb: "What should you consider next?",
   },
@@ -97,10 +108,10 @@ export function isTarotPosition(value: unknown): value is TarotPosition {
 /**
  * Map a stored position label back to its id.
  *
- * Saved readings keep the human-readable label ("Current Energy"), and the
- * in-draw spread slot captions shorten it further with
- * `label.split(" /")[0]` ("Influence"). Both forms resolve to the same id, so
- * a reading saved by either path can be interpreted consistently later.
+ * Saved readings keep the human-readable label ("Current Energy"). Readings
+ * written before `shortLabel` existed may carry the shortened slot-caption form
+ * ("Current", "Influence") or a " /"-truncated label, so all three resolve to
+ * the same id and older readings stay interpretable.
  */
 export function getPositionIdFromLabel(label: string): TarotPosition | undefined {
   if (typeof label !== "string") return undefined;
@@ -109,6 +120,7 @@ export function getPositionIdFromLabel(label: string): TarotPosition | undefined
     (p) =>
       p.id === needle ||
       p.label.toLowerCase() === needle ||
+      p.shortLabel.toLowerCase() === needle ||
       p.label.split(" /")[0].trim().toLowerCase() === needle
   )?.id;
 }

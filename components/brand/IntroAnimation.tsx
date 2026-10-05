@@ -40,6 +40,14 @@ export default function IntroAnimation({ onComplete }: IntroAnimationProps) {
       }, 400)
     );
 
+    // Offer Skip partway through the sequence. `skipReady` was previously
+    // declared and read but never set, so the Skip button could never render
+    // and the intro could not be dismissed early at all.
+    //
+    // It has to fire well before the 3200ms completion, because completion
+    // unmounts this component: a Skip scheduled after 3200ms is unreachable.
+    timers.push(setTimeout(() => setSkipReady(true), 1600));
+
     return () => {
       timers.forEach(clearTimeout);
     };
@@ -186,18 +194,23 @@ export default function IntroAnimation({ onComplete }: IntroAnimationProps) {
         )}
       </AnimatePresence>
 
-      {/* Skip intro for returning users */}
-      {skipReady && phase >= 4 && (
-        <button
+      {/* Skip intro. Gated on skipReady alone: the previous `phase >= 4` narrowed
+          the window to the 800ms between phase 4 and auto-completion, which is
+          too tight to press reliably. */}
+      {skipReady && (
+        <motion.button
           onClick={() => {
             markIntroPlayed();
             onComplete();
           }}
-          className="absolute bottom-8 text-coolgray text-xs tracking-wider uppercase hover:text-warmwhite transition-colors"
+          className="absolute bottom-8 px-4 py-2 min-h-[44px] text-coolgray text-xs tracking-wider uppercase hover:text-warmwhite transition-colors"
           aria-label="Skip intro"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4 }}
         >
           Skip
-        </button>
+        </motion.button>
       )}
     </motion.div>
   );

@@ -474,7 +474,7 @@ export default function MiniAppDrawing({ initialCategory, embedded = false }: Pr
               {TAROT_CATEGORIES.map((c, i) => (
                 <motion.button
                   key={c.id}
-                  className={`w-full glass rounded-xl px-4 py-3.5 flex items-center gap-4 text-left transition-all duration-300 min-h-[56px] touch-manipulation ${
+                  className={`w-full glass rounded-xl px-4 py-3.5 flex items-center gap-4 text-left transition-[color,background-color,border-color,box-shadow,transform] duration-300 min-h-[56px] touch-manipulation ${
                     category === c.id
                       ? "border-gold-400/60 shadow-[0_0_24px_rgba(212,184,90,0.15)] -translate-y-0.5"
                       : "border-gold-400/10 hover:border-gold-400/30"

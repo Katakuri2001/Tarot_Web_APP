@@ -23,7 +23,29 @@ import {
   composeOverallReading,
 } from "@/utils/tarotReading";
 
-const NUM_VISIBLE = 7;
+/**
+ * How many candidate cards are fanned out to choose from.
+ *
+ * Bounded by geometry, not taste. Each card needs a contiguous strip of at
+ * least 44px (AGENTS.md touch-target rule) that no neighbour covers, and the
+ * outermost card still has to fit its own body. Gap between adjacent fan
+ * cards is roughly
+ *
+ *   (width - 2*DOME_PAD - 2*halfW) * sin(H/(n-1)) / sin(H)
+ *
+ * where halfW grows with rotation because a rotated card occupies more
+ * horizontal room than an upright one. Seven `lg` cards left the outer cards
+ * with 22-31px slivers at 360-412px — untappable by thumb, and their centres
+ * were covered by a neighbour so elementFromPoint never returned them.
+ *
+ * Five `md` cards with the gentler rotation below measure 46/52/58px of
+ * reachable run at 360/390/412px.
+ *
+ * Known limit: below ~340px wide, five cards cannot all reach 44px even at
+ * this size. Supporting 320px would mean dropping to four candidates there
+ * rather than shrinking further.
+ */
+const NUM_VISIBLE = 5;
 
 interface CardPosition {
   x: number;
@@ -36,7 +58,7 @@ interface CardPosition {
 
 type CardSize = "sm" | "md" | "lg";
 
-const DECK_SIZE: CardSize = "lg";
+const DECK_SIZE: CardSize = "md";
 
 const SHUFFLE_TRAVEL = 88;
 const SHUFFLE_SPEED = 0.085;
@@ -44,11 +66,19 @@ const SHUFFLE_X_JITTER = 7;
 const SHUFFLE_ROT_JITTER = 5;
 
 const DOME_HALF_ANGLE = (45 * Math.PI) / 180;
-const DOME_ROTATE = 11;
+/**
+ * Per-card fan rotation. Kept gentle deliberately: a rotated card's bounding
+ * box is wider than the card, and that extra width is taken straight out of
+ * the exposed strip the neighbouring card needs. 8deg rather than 11deg buys
+ * roughly 7px of reachable run per card at 360px, which is the difference
+ * between clearing and missing the 44px touch-target rule.
+ */
+const DOME_ROTATE = 8;
 const DOME_MAX_RADIUS_X = 220;
 const DOME_MIN_DROOP = 24;
 const DOME_DROOP_RATIO = 0.58;
-const DOME_PAD = 10;
+/** Edge breathing room. Also feeds the touch-target budget above. */
+const DOME_PAD = 6;
 
 const CARD_DIMENSIONS: Record<CardSize, { w: number; h: number }> = {
   sm: { w: 112, h: 160 },

@@ -33,6 +33,13 @@ export default function CardFront({ name, keywords, arcana, suit, number, orient
   const color = suitColors[suit] || "#d4b85a";
   const symbol = suitSymbol[suit] || "✦";
 
+  /** 0–21 for the 22 Major Arcana. */
+  const ROMAN: Record<number, string> = {
+    0: "0", 1: "I", 2: "II", 3: "III", 4: "IV", 5: "V", 6: "VI", 7: "VII",
+    8: "VIII", 9: "IX", 10: "X", 11: "XI", 12: "XII", 13: "XIII", 14: "XIV",
+    15: "XV", 16: "XVI", 17: "XVII", 18: "XVIII", 19: "XIX", 20: "XX", 21: "XXI",
+  };
+
   return (
     <div className="relative w-full h-full flex flex-col">
       <div
@@ -42,10 +49,13 @@ export default function CardFront({ name, keywords, arcana, suit, number, orient
           border: `1px solid ${color}33`,
         }}
       >
-        {/* Top decoration */}
+        {/* Top decoration. Majors show their Roman numeral here; the Arabic
+            number is already bottom-right, so printing it in both corners
+            duplicated it. Minors show the suit name, which the bottom-right
+            does not carry. */}
         <div className="absolute top-3 left-3 right-3 flex justify-between items-center">
           <span className="font-serif-display text-xs" style={{ opacity: 0.6, color }}>
-            {arcana === "major" ? `${String(number).padStart(2, "0")}` : suit?.charAt(0).toUpperCase() + suit?.slice(1)}
+            {arcana === "major" ? ROMAN[number] ?? String(number) : suit?.charAt(0).toUpperCase() + suit?.slice(1)}
           </span>
           <span className="text-lg" style={{ opacity: 0.5, color }}>
             {symbol}

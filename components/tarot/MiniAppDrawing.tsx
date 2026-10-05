@@ -393,10 +393,7 @@ export default function MiniAppDrawing({ initialCategory, embedded = false }: Pr
 
   const overallReading = useMemo(() => {
     if (phase !== "result" || !category || drawn.length !== 3) return "";
-    return composeOverallReading(category, drawn, getCardById, (sc) => {
-      const card = getCardById(sc.cardId);
-      return card ? getCategoryCardReading(card, sc.orientation, category, sc.position) : "";
-    });
+    return composeOverallReading(category, drawn, getCardById);
   }, [phase, category, drawn]);
 
   const inDrawPhase =

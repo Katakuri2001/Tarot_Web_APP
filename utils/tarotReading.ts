@@ -164,16 +164,32 @@ const OVERALL_CLOSINGS: Record<TarotCategory, string> = {
   travel: "Carry this reflection with you as you move — every journey shifts when you travel with intention.",
 };
 
+/** " (reversed)" for a reversed card, empty for an upright one. */
+function reversedSuffix(sc: SpreadCard): string {
+  return sc.orientation === "reversed" ? " (reversed)" : "";
+}
+
 /**
  * Deterministic, rule-based overall reading that weaves the three cards
  * into one coherent narrative for the selected category. Built from the
  * existing card content — no invented free-form sentences.
+ *
+ * Each clause states the position in its own words ("The current energy
+ * stands with X", "Y introduces a blockage", "Z offers direction") and then
+ * quotes the card's meaning in full. The position lead-in from
+ * `getCategoryCardReading` is deliberately NOT spliced in here: the clause
+ * already carries the position, so repeating it produced a stutter
+ * ("...stands with Justice: In your love life right now: ...") — and
+ * summarising the composed reading to its first sentence silently dropped
+ * the rest of each card's meaning.
+ *
+ * `getCard` and the category are all this needs, so there is no callback
+ * parameter: the caller cannot accidentally hand it something pre-composed.
  */
 export function composeOverallReading(
   category: TarotCategory,
   cards: SpreadCard[],
-  getCard: (id: string) => TarotCardData | undefined,
-  readingText: (sc: SpreadCard) => string
+  getCard: (id: string) => TarotCardData | undefined
 ): string {
   const meta = getCategoryMeta(category);
   if (cards.length !== 3) return "";
@@ -184,10 +200,6 @@ export function composeOverallReading(
   const c3 = getCard(third.cardId);
   if (!c1 || !c2 || !c3) return "";
 
-  const short1 = firstSentence(readingText(first));
-  const short2 = firstSentence(readingText(second));
-  const short3 = firstSentence(readingText(third));
-
   const influenceVerb =
     second.orientation === "reversed"
       ? "introduces a blockage or internal resistance"
@@ -195,9 +207,9 @@ export function composeOverallReading(
 
   return [
     `Taken together, these three cards paint a picture of your ${meta.label.toLowerCase()} path right now.`,
-    `The current energy stands with ${c1.name}${first.orientation === "reversed" ? " (reversed)" : ""}: ${short1}`,
-    `${c2.name}${second.orientation === "reversed" ? " (reversed)" : ""} ${influenceVerb}: ${short2}`,
-    `Finally, ${c3.name}${third.orientation === "reversed" ? " (reversed)" : ""} offers direction: ${short3}`,
+    `The current energy stands with ${c1.name}${reversedSuffix(first)}: ${getBaseMeaning(c1, first.orientation, category)}`,
+    `${c2.name}${reversedSuffix(second)} ${influenceVerb}: ${getBaseMeaning(c2, second.orientation, category)}`,
+    `Finally, ${c3.name}${reversedSuffix(third)} offers direction: ${getBaseMeaning(c3, third.orientation, category)}`,
     OVERALL_CLOSINGS[category],
   ].join(" ");
 }

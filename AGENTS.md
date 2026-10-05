@@ -204,8 +204,11 @@ category-aware interpretation of a single card. Health language is
 deliberately non-diagnostic (wellbeing, rest, balance, self-care) with a
 visible disclaimer on the result screen.
 
-`composeOverallReading(category, cards, getCard, readingText)` weaves the
-three cards into one coherent, rule-based overall reading for the category.
+`composeOverallReading(category, cards, getCard)` weaves the three cards into
+one coherent, rule-based overall reading for the category. It takes no
+interpretation callback: it derives each clause from the card data itself, so
+the position lead-in is never spliced into the narrative (the clause already
+states the position) and no part of a card's meaning is truncated.
 
 ### 3-Card Spread Rules
 

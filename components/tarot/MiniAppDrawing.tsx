@@ -80,6 +80,21 @@ const DOME_DROOP_RATIO = 0.58;
 /** Edge breathing room. Also feeds the touch-target budget above. */
 const DOME_PAD = 6;
 
+/** Breathing room between the deck and the status block. */
+const STATUS_GAP = 14;
+/** Minimum assumed status height before it has been measured. */
+const STATUS_MIN_HEIGHT = 40;
+/** Keep-clear strip at the arena edges. */
+const STATUS_EDGE = 10;
+/** Upper bound on settle sampling (~0.8s at 60fps) before giving up. */
+const SETTLE_MAX_FRAMES = 48;
+/**
+ * How long the measured offset must hold steady before sampling stops. Must
+ * exceed the spring's initial crawl, where per-frame movement is well under a
+ * pixel while the deck is still travelling tens of pixels.
+ */
+const STATUS_SETTLE_MS = 180;
+
 const CARD_DIMENSIONS: Record<CardSize, { w: number; h: number }> = {
   sm: { w: 112, h: 160 },
   md: { w: 144, h: 208 },
@@ -121,6 +136,8 @@ export default function MiniAppDrawing({ initialCategory, embedded = false }: Pr
   const containerRef = useRef<HTMLDivElement>(null);
   const slotRowRef = useRef<HTMLDivElement>(null);
   const slotRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const deckLayerRef = useRef<HTMLDivElement>(null);
+  const statusRef = useRef<HTMLDivElement>(null);
   const intervalRef = useRef<number | null>(null);
   const timerRef = useRef<number | null>(null);
 
@@ -216,20 +233,100 @@ export default function MiniAppDrawing({ initialCategory, embedded = false }: Pr
     [getContainerSize]
   );
 
-  const statusTextTop = useMemo(() => {
-    const count = visibleCardIds.length;
-    if (count === 0) return "calc(50% + 160px)";
-    const { height } = getContainerSize();
-    const { h: cardH } = CARD_DIMENSIONS[DECK_SIZE];
-    const rotRad = (DOME_ROTATE * Math.PI) / 180;
-    const { w: cardW } = CARD_DIMENSIONS[DECK_SIZE];
-    const halfH = (cardW / 2) * Math.sin(rotRad) + (cardH / 2) * Math.cos(rotRad);
-    const roomForDroop = height - DOME_PAD * 2 - halfH * 2;
-    const droop = count === 1 ? 0 : Math.max(DOME_MIN_DROOP, Math.min(roomForDroop, cardH * DOME_DROOP_RATIO));
-    const lowest = height / 2 + droop / 2 + halfH;
-    const clamped = Math.min(lowest + 36, height - 30);
-    return `${Math.max(0, clamped)}px`;
-  }, [visibleCardIds, getContainerSize]);
+  /**
+   * Top offset of the status block, in px relative to the drawing arena.
+   *
+   * Measured from the rendered deck rather than derived from the dome
+   * constants. The derived version was wrong in two separate ways:
+   *
+   *  - it read the container size from a ref during render, so on the first
+   *    card `containerRef.current` was still null and `getContainerSize()`
+   *    silently returned its hardcoded {360, 600} fallback. That produced a
+   *    509px offset where the real layout needs 601px, and because the memo
+   *    only re-ran when `visibleCardIds` changed, cards 2 and 3 were correct
+   *    while card 1 - the one the visitor sees first - overlapped the deck.
+   *  - it mixed units (a calc() percentage with no deck, a px value with one)
+   *    and never recomputed on resize, so the offset went stale after a
+   *    viewport change.
+   *
+   * null means "not measured yet"; the status block stays unrendered until it
+   * has a real position, so it never appears in a guessed spot.
+   */
+  const [statusTextTop, setStatusTextTop] = useState<number | null>(null);
+
+  useEffect(() => {
+    const arena = containerRef.current;
+    const deck = deckLayerRef.current;
+    const status = statusRef.current;
+    if (!arena || !deck || !status) return;
+
+    let frame = 0;
+    let lastTop: number | null = null;
+    let lastChangeAt = 0;
+    let cancelled = false;
+
+    /**
+     * Re-measure every frame until the layout stops moving.
+     *
+     * Two things this has to get right:
+     *
+     *  - It must keep sampling while the deck is in flight. The cards are
+     *    animated by framer-motion springs, so when the phase flips to
+     *    "selecting" the DOM rects are still moving, and the effect's
+     *    dependencies never change again during the animation.
+     *  - "Stopped moving" has to be judged over time, not per frame. The spring
+     *    covers less than 1px in its first frames while the deck is still
+     *    travelling 50+px overall, so a 1px-per-frame tolerance declares it
+     *    settled almost immediately and locks in a mid-flight position.
+     *
+     * `lastTop` is tracked outside the state updater on purpose: updaters must
+     * be pure, and React may invoke them more than once.
+     */
+    const settle = () => {
+      if (cancelled) return;
+
+      const now = performance.now();
+      const cards = Array.from(deck.children).filter(
+        (el) => el.getBoundingClientRect().width > 0
+      );
+
+      let next: number | null = null;
+      if (cards.length > 0) {
+        const arenaRect = arena.getBoundingClientRect();
+        const rects = cards.map((c) => c.getBoundingClientRect());
+        const deckTop = Math.min(...rects.map((r) => r.top)) - arenaRect.top;
+        const deckBottom = Math.max(...rects.map((r) => r.bottom)) - arenaRect.top;
+        const statusH = status.getBoundingClientRect().height || STATUS_MIN_HEIGHT;
+
+        if (arenaRect.height - deckBottom >= statusH + STATUS_GAP + STATUS_EDGE) {
+          next = deckBottom + STATUS_GAP;
+        } else if (deckTop >= statusH + STATUS_GAP + STATUS_EDGE) {
+          next = deckTop - statusH - STATUS_GAP;
+        } else {
+          // No room above or below (short viewport). Park it at the bottom
+          // edge rather than the middle of the deck.
+          next = Math.max(STATUS_EDGE, arenaRect.height - statusH - STATUS_EDGE);
+        }
+      }
+
+      if (next !== null && (lastTop === null || Math.abs(lastTop - next) >= 1)) {
+        lastTop = next;
+        lastChangeAt = now;
+        setStatusTextTop(next);
+      }
+
+      const settledFor = now - lastChangeAt;
+      if (settledFor < STATUS_SETTLE_MS && frame < SETTLE_MAX_FRAMES) {
+        frame += 1;
+        requestAnimationFrame(settle);
+      }
+    };
+
+    settle();
+    return () => {
+      cancelled = true;
+    };
+  }, [phase, step, positions, visibleCardIds]);
 
   /** Candidate deck ids for the next draw: unique within spread, last spread avoided. */
   const pickVisibleIds = useCallback(
@@ -568,6 +665,7 @@ export default function MiniAppDrawing({ initialCategory, embedded = false }: Pr
       {inDrawPhase && (
         <div ref={containerRef} className="flex-1 relative z-10 min-h-0">
           <div
+            ref={deckLayerRef}
             className="absolute inset-0"
             style={{
               background: "radial-gradient(ellipse at center, rgba(26,10,62,0.3) 0%, rgba(6,6,15,0.95) 100%)",
@@ -633,12 +731,23 @@ export default function MiniAppDrawing({ initialCategory, embedded = false }: Pr
             ))}
           </div>
 
-          {/* Status text */}
+          {/* Status text. Always mounted while the phase needs it, but hidden until a
+              position has been measured: the measuring effect needs the element
+              to exist in order to read its height, so gating the render on the
+              measurement would deadlock. */}
           <AnimatePresence mode="wait">
             {(phase === "selecting" || phase === "revealing" || phase === "placing") && (
               <motion.div
+                ref={statusRef}
                 className="absolute text-center z-30 pointer-events-none w-full px-4"
-                style={{ top: statusTextTop, x: "-50%", left: "50%" }}
+                style={{
+                  top: statusTextTop ?? 0,
+                  // opacity is driven by framer below; visibility gates the
+                  // unmeasured frame without fighting the enter animation.
+                  visibility: statusTextTop === null ? "hidden" : "visible",
+                  x: "-50%",
+                  left: "50%",
+                }}
                 key={phase + step}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}

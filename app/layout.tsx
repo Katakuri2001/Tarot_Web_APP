@@ -20,16 +20,14 @@ export const metadata: Metadata = {
     title: "Velora — Discover What The Cards Reveal",
     description: "Step into the mystical observatory of Velora. Trust your intuition. Let the tarot cards reveal another perspective on your journey.",
   },
-  icons: {
-    icon: [
-      { url: "/favicon.ico", sizes: "any" },
-      { url: "/icons/favicon-32x32.png", type: "image/png", sizes: "32x32" },
-      { url: "/icons/favicon-16x16.png", type: "image/png", sizes: "16x16" },
-    ],
-    apple: [
-      { url: "/icons/apple-touch-icon.png", sizes: "180x180" },
-    ],
-  },
+  /*
+   * No explicit `icons` block. It used to point at /favicon.ico and four
+   * /icons/*.png paths that have never existed in this repository, and
+   * app/icon.svg takes precedence over the metadata field anyway — the served
+   * HTML contained only <link rel="icon" href="/icon.svg">, so those entries
+   * were inert configuration rather than the per-page 404s they were first
+   * reported as. app/icon.svg is picked up automatically.
+   */
 };
 
 export default function RootLayout({

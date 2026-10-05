@@ -288,32 +288,41 @@ information.
 
 ---
 
-### 8. MEDIUM — `public/` is missing; 5 asset 404s, 4 of them on every page
+### 8. MEDIUM — `public/` is missing; homepage asset 404s
 
 `public/` **does not exist in the working tree** and `git ls-files public` is
-empty, yet it is referenced from two places. Confirmed status codes:
+empty. It was never tracked: `git log --all --diff-filter=A -- 'public/*'` is
+empty and `git rev-list --all --objects | grep ' public/'` returns nothing, so
+the assets cannot be restored from history.
 
-| Path | Referenced from | Status |
-| --- | --- | --- |
-| `/favicon.ico` | `app/layout.tsx:25` | **404** |
-| `/icons/favicon-32x32.png` | `app/layout.tsx:26` | **404** |
-| `/icons/favicon-16x16.png` | `app/layout.tsx:27` | **404** |
-| `/icons/apple-touch-icon.png` | `app/layout.tsx:30` | **404** |
-| `/cards/back.jpg` | `app/page.tsx:106-107` | **404** |
-| `/icon.svg` | `app/icon.svg` | 200 |
+> **CORRECTION (added during the fix).** This finding originally claimed five
+> 404s, four of them on every page load. That was wrong. The four
+> `app/layout.tsx` icon URLs do return 404 if requested, but the browser never
+> requests them: `app/icon.svg` takes precedence over the metadata `icons`
+> field, so the served HTML contains only
+> `<link rel="icon" href="/icon.svg">`. Those entries were inert configuration,
+> not per-page 404s.
+>
+> The one genuine 404 is `/cards/back.jpg` on `/`, from an `<img>` in
+> `app/page.tsx` whose `onError` handler hid it — invisible in the UI, but a
+> failed request and a console error on every homepage view.
 
-`/cards/back.jpg` has an `onError` fallback that hides the `<img>`, so the
-homepage degrades gracefully. The four icon paths have no fallback and are
-requested on every page load.
+| Path | Referenced from | Requested by browser? | Status |
+| --- | --- | --- | --- |
+| `/cards/back.jpg` | `app/page.tsx` | yes, on `/` | **404** |
+| `/favicon.ico` | `app/layout.tsx` metadata | no — shadowed by `app/icon.svg` | 404 if requested |
+| `/icons/favicon-32x32.png` | `app/layout.tsx` metadata | no | 404 if requested |
+| `/icons/favicon-16x16.png` | `app/layout.tsx` metadata | no | 404 if requested |
+| `/icons/apple-touch-icon.png` | `app/layout.tsx` metadata | no | 404 if requested |
+| `/icon.svg` | `app/icon.svg` | yes | 200 |
 
-Note: `AGENTS.md` and `test.md` both document `public/` as containing
-`favicon.ico`, `icons/`, and `cards/`. The directory is missing from the tree,
-not from the documentation.
+`AGENTS.md` and `test.md` both document `public/` as containing `favicon.ico`,
+`icons/`, and `cards/`. The directory is missing from the tree, not from the
+documentation.
 
-**Suggested fix:** restore `public/` from version history or the deployment
-artefacts, or drop the metadata icon entries and the homepage `<img>` so the
-code stops referencing assets that do not exist. Also resolves the
-`@next/next/no-img-element` build warning.
+**Status: fixed.** The `<img>` is gone — the gradient and inline crescent
+behind it were the intended artwork all along — and the inert `icons` metadata
+block is removed so `app/icon.svg` is the single source.
 
 ---
 

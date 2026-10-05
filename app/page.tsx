@@ -103,14 +103,12 @@ export default function HomePage() {
                     boxShadow: "0 0 40px rgba(212,184,90,0.12), 0 0 80px rgba(26,10,62,0.25)",
                   }}
                 >
-                  <img
-                    src="/cards/back.jpg"
-                    alt="Tarot card"
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = "none";
-                    }}
-                  />
+                  {/* No <img> here: it referenced /cards/back.jpg, which has
+                      never existed in this repository (public/ is absent and
+                      was never tracked), so every homepage view issued a 404
+                      and the onError handler hid the image anyway. The
+                      gradient plus the inline crescent below is the intended
+                      artwork. */}
                   <div className="absolute inset-0 flex items-center justify-center" style={{ background: "linear-gradient(135deg, #1a0a3e, #06060f)" }}>
                     <svg width="70" height="70" viewBox="0 0 40 40" fill="none">
                       <path d="M24 8C18.5 10 14 16 14 22C14 28 18.5 34 24 36C20 32 19 27 21 22C23 17 27 13 24 8Z" fill="#d4b85a" opacity="0.8" />

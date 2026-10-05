@@ -613,6 +613,12 @@ export default function MiniAppDrawing({ initialCategory, embedded = false }: Pr
                   transition={{ delay: 0.15 + i * 0.07, duration: 0.4 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => {
+                    // timerRef is shared with the shuffle/reveal/place sequence,
+                    // so clear whatever it is holding before taking it over.
+                    // Otherwise a rapid second tap orphans the first timeout:
+                    // the handle is overwritten, the unmount cleanup can only
+                    // clear the last one, and the stray timer still fires.
+                    if (timerRef.current) clearTimeout(timerRef.current);
                     setCategory(c.id);
                     timerRef.current = window.setTimeout(() => setPhase("intro"), 450);
                   }}

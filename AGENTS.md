@@ -115,10 +115,19 @@ Tarot Website/
 ├── admin/                        # Admin panel (separate build)
 ├── node_modules/
 ├── .next/                        # Build output
-├── public/                       # DOES NOT EXIST — never tracked in this repo.
-│                                 #   Do not reference /favicon.ico or /icons/*
-│                                 #   from metadata; app/icon.svg is the icon
-│                                 #   Next serves and it takes precedence.
+├── app/icon.svg                  # Velora mark — the icon source of truth.
+│                                 #   Next serves it; browsers render SVG fine.
+│                                 #   Do NOT rename to apple-touch-icon.* —
+│                                 #   the convention is apple-icon.* and the
+│                                 #   wrong name is silently ignored.
+├── app/apple-icon.png            # 180x180, generated from icon.svg. iOS
+│                                 #   ignores SVG for the home-screen icon.
+├── app/favicon.ico               # 16/32/48, generated from icon.svg. Covers
+│                                 #   the bare /favicon.ico probe.
+│                                 #   Regenerate both:
+│                                 #     node scripts/generate-icons.mjs
+├── scripts/generate-icons.mjs    # Icon generator (needs sharp; transitive
+│                                 #   via Next, so not yet a declared dep)
 ├── wrangler.toml                 # Cloudflare Pages config
 ├── wrangler.admin.toml           # Cloudflare Worker config
 ├── next.config.js                # Next.js config

@@ -44,6 +44,75 @@ test("the site favicon resolves", async ({ page, request }) => {
   expect(response.status()).toBe(200);
 });
 
+/**
+ * Icon coverage, added after docs/ICONS_AND_SEO.md was written.
+ *
+ * Only /icon.svg was emitted, so iOS "Add to Home Screen" fell back to a
+ * screenshot of the page, and the bare /favicon.ico probe that some clients
+ * and crawlers use returned 404.
+ */
+test("an apple-touch-icon is advertised for iOS home screens", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForTimeout(500);
+
+  const link = page.locator('link[rel="apple-touch-icon"]');
+  await expect(link, "no <link rel=apple-touch-icon> emitted").toHaveCount(1);
+
+  const href = await link.getAttribute("href");
+  expect(href, "apple-touch-icon href missing").toBeTruthy();
+
+  const response = await page.request.get(href!);
+  expect(response.status(), `apple-touch-icon at ${href} should serve`).toBe(200);
+});
+
+test("apple-touch-icon is a PNG, since iOS ignores SVG for this", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForTimeout(500);
+
+  const href = await page
+    .locator('link[rel="apple-touch-icon"]')
+    .getAttribute("href");
+
+  // Next appends a cache-busting query string ("/apple-icon.png?613325ef..."),
+  // so assert on the pathname rather than the tail of the href.
+  const pathname = new URL(href!, page.url()).pathname;
+  expect(pathname.toLowerCase()).toMatch(/\.png$/);
+});
+
+test("the bare /favicon.ico probe resolves", async ({ request }) => {
+  // Some clients and crawlers request this without reading the markup.
+  const response = await request.get("/favicon.ico");
+  expect(response.status()).toBe(200);
+});
+
+test("the dead app/apple-touch-icon.svg file is deleted", async () => {
+  // Asserted on the filesystem, not over HTTP: the URL 404s both before and
+  // after deletion, because Next never served it either way. The point is that
+  // the inert file is gone from the repo, so it cannot be mistaken for the
+  // real thing later.
+  const { existsSync } = await import("node:fs");
+  const path = await import("node:path");
+
+  const stray = path.resolve(process.cwd(), "app/apple-touch-icon.svg");
+  expect(
+    existsSync(stray),
+    "app/apple-touch-icon.svg should be deleted; Next's convention is apple-icon.*"
+  ).toBe(false);
+
+  // And the convention-correct file is the one that exists.
+  expect(
+    existsSync(path.resolve(process.cwd(), "app/apple-icon.png")),
+    "app/apple-icon.png should exist"
+  ).toBe(true);
+});
+
+test("the icon source of truth is still app/icon.svg", async ({ request }) => {
+  // The raster icons are generated from this. Keeping it intact is what makes
+  // them regenerable when real brand assets arrive.
+  const response = await request.get("/icon.svg");
+  expect(response.status()).toBe(200);
+});
+
 test("no console errors on the homepage", async ({ page }) => {
   const errors: string[] = [];
   page.on("console", (m) => {

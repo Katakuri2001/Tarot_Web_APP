@@ -1,9 +1,66 @@
-# Icons, Favicons and Social Metadata — Deferred Work
+# Icons, Favicons and Social Metadata
 
-**Status:** Deferred by decision. Nothing here is implemented.
+**Status:** Icon coverage **done**. Domain-dependent and SEO work **deferred**.
 **Date raised:** 2026-10-06
-**Raised while:** inspecting bug #8 (`public/` missing) at the end of the
+**Raised while:** inspecting bug #8 (`public/ missing) at the end of the
 14-bug fix pass.
+
+## 0. Outcome summary
+
+Decisions taken by the project owner, 2026-10-06:
+
+| Question | Decision |
+| --- | --- |
+| Brand assets | Use the current assets; real brand artwork to be added later |
+| Production origin | Cloudflare Workers/Pages for now; domain added when needed |
+| Robots / sitemap | Not wanted for now |
+
+What was implemented from that:
+
+- `app/apple-icon.png` — 180×180, generated from `app/icon.svg`. Restores the
+  iOS home-screen icon, which iOS does not honour from SVG.
+- `app/favicon.ico` — 16/32/48px, generated from `app/icon.svg`. Covers the bare
+  `/favicon.ico` probe that some clients and crawlers issue.
+- `app/apple-touch-icon.svg` — **deleted.** Next's convention is `apple-icon.*`,
+  so this file was never served; it was a byte-identical duplicate of
+  `app/icon.svg` that only produced a 404.
+- `scripts/generate-icons.mjs` — regenerates the two rasters from the SVG.
+
+What was deliberately **not** done:
+
+- **No `metadataBase`.** There is no production origin yet, and a placeholder
+  would be worse than nothing: wrong absolute URLs get baked into every social
+  share and every sitemap entry, and crawlers index them. See §4.4 — this must
+  be set *before* an OG image is added, or previews silently render blank.
+- **No `robots.txt`, no `sitemap.xml`.**
+- **No OG / twitter image**, so `twitter: card: "summary_large_image"` in
+  `app/layout.tsx` still claims a large image that does not exist. Left as-is:
+  changing the card type alters how shares appear, which is a product decision,
+  and there is no image to add yet.
+
+Verified served after the change:
+
+```
+<link rel="icon" href="/favicon.ico" type="image/x-icon" sizes="16x16"/>
+<link rel="icon" href="/icon.svg?…" type="image/svg+xml" sizes="any"/>
+<link rel="apple-touch-icon" href="/apple-icon.png?…" type="image/png" sizes="180x180"/>
+```
+
+Note that Next emits `sizes="16x16"` for the `.ico` even though the container
+holds 16/32/48. Browsers pick the appropriate entry regardless; the attribute
+is Next's, not ours.
+
+### Known cosmetic limit at 16px
+
+Measured, not assumed. `app/icon.svg` is three shapes on a 32×32 viewBox. At
+32px and above the crescent and dot read cleanly. At **16px the crescent thins
+to a sliver and the cream dot merges into its inner edge**, reading as a nick in
+the crescent rather than a separate star.
+
+Left unchanged because the instruction was to use the current assets. Fixing it
+means editing the source SVG's circle coordinates — a branding change. The 16px
+entry is kept because omitting it makes small-context rendering worse, not
+better.
 
 ---
 
@@ -135,12 +192,14 @@ This is the strongest argument for adding `robots.txt`.
 - Risk: essentially zero.
 - Still missing: iOS home-screen icon, legacy favicon probe.
 
-### Option B — generate raster icons from the existing SVG
+### Option B — generate raster icons from the existing SVG — **CHOSEN**
 
 - Keep `app/icon.svg` as the source of truth.
 - Add `app/apple-icon.png` at 180×180 so Next emits
   `<link rel="apple-touch-icon">`.
-- Optionally add `public/favicon.ico` for the legacy probe.
+- Add `app/favicon.ico` (16/32/48) for the legacy probe.
+
+Implemented. Regenerate with `node scripts/generate-icons.mjs`.
 
 **Legibility was measured, not assumed.** `app/icon.svg` is three shapes on a
 32×32 viewBox (dark rounded square, gold crescent, cream dot), rasterised with
@@ -174,29 +233,31 @@ a visible gap on the platform this product targets most.
 
 ---
 
-## 6. Open decisions
+## 6. Open decisions — remaining
 
-These need a human answer. They are why the work is parked.
+The three questions in §0 are answered. These are what remains, all of them
+blocked on the production origin.
 
-1. **Do the original `favicon.ico` / icon PNGs exist anywhere?** → chooses C or B.
-2. **What is the production origin?** (e.g. `https://velora.xyz`) → required for
-   `metadataBase`, `robots.txt` sitemap reference, sitemap entries, and OG URLs.
-   It is **not** discoverable from the repo: not in `wrangler.toml` (which has
+1. **What is the production origin?** Needed for `metadataBase`, any
+   `robots.txt` sitemap reference, sitemap entries, and OG image URLs. It is
+   **not** discoverable from the repo: not in `wrangler.toml` (which carries
    only worker *names*, `velora-tarot` and `velora-tarot-admin`), not in
    `package.json`, not in the README. The CORS middleware reflects `url.origin`
    straight back, so it pins nothing. A Cloudflare custom domain or
    `*.workers.dev` subdomain lives in the Cloudflare dashboard.
-3. **Robots: yes or no?** Recommended **yes** — it is the only way to keep
-   crawler-facing routes clean without adding `noindex` to every page.
-   Sitemap: **low value**, since the indexable set is five static pages and
-   almost all real content is client-side or localStorage-only. Cheap to add
-   once the domain is known.
+2. **Add real brand artwork** — replace `app/icon.svg` and re-run
+   `node scripts/generate-icons.mjs`. This is also the fix for the 16px limit in
+   §0, if the new artwork suits small sizes better.
+3. **Add an OG / twitter image** — only *after* `metadataBase` exists. Requires
+   deciding whether to keep `summary_large_image` or drop to `summary`.
+4. **Robots / sitemap** — currently unwanted. If revisited, robots is the one
+   with real value: `/readings/[type]/[id]` is a crawler dead end (§4.5).
 
-**Do not guess the domain.** Wrong absolute URLs get baked into every social
-share and every sitemap entry, and crawlers index them. A wrong domain is
-worse than a missing one because it is confidently wrong. If an env var is
-preferred over hardcoding, use `NEXT_PUBLIC_SITE_URL` **and** add a build-time
-warning when it is missing in production.
+**When the domain is known:** set `metadataBase` first, then add images. If an
+env var is preferred over hardcoding, use `NEXT_PUBLIC_SITE_URL` **and** add a
+build-time warning when it is missing in production — a silent fallback to
+`localhost` would bake wrong URLs into shares, which is the failure mode this
+section exists to prevent.
 
 ---
 

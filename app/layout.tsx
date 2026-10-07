@@ -42,6 +42,17 @@ export default function RootLayout({
         <meta name="theme-color" content="#06060f" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        {/*
+          False positive. `no-page-custom-font` exists because the Pages Router
+          only loads fonts declared in _document.js. This is the App Router,
+          where a font <link> in the root layout is the supported way to do it —
+          the rule has no App Router equivalent and fires here regardless.
+
+          The directive has to sit on its own line immediately above the <link>:
+          a multi-line JSX comment pushes "the next line" far past the element,
+          which is why an earlier attempt here silently disabled nothing.
+        */}
+        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
         <link
           href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap"
           rel="stylesheet"

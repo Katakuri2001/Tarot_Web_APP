@@ -19,14 +19,21 @@
 | `npm run build` | **PASS** — 11 routes compiled, 4 warnings |
 | Automated tests | **NONE EXIST** — see §5 |
 
-Build warnings, all in files untouched by this change:
+Build warnings at the time of inspection, all in files untouched by this change:
 
-- `app/layout.tsx:47` — `@next/next/no-page-custom-font`
-- `app/page.tsx:106` — `@next/next/no-img-element`
+- `app/layout.tsx:47` — `@next/next/no-page-custom-font` (a false positive: a
+  Pages-Router rule applied to an App Router app; now disabled with a comment)
+- `app/page.tsx:106` — `@next/next/no-img-element` (resolved in `a4158d8`, by
+  removing an `<img>` that referenced a file which never existed)
 - `components/tarot/TarotTable.tsx:169` — `react-hooks/exhaustive-deps` (`selectedCards`)
 - `components/tarot/TarotTable.tsx:232` — `react-hooks/exhaustive-deps` (`sound`)
 
-**No static gate fails.** Every defect below is runtime-only, which is why the
+> **Since resolved.** `TarotTable.tsx` was later found to be imported nowhere —
+> dead code superseded by `MiniAppDrawing.tsx` — and deleted. That removed both
+> `exhaustive-deps` warnings. `npm run lint` now reports **0 warnings**.
+> See §6 "What was done".
+
+**No static gate failed.** Every defect below is runtime-only, which is why the
 flow had to be driven in a real browser to surface them.
 
 ### How these were found

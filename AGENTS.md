@@ -60,19 +60,19 @@ Tarot Website/
 │   │   ├── layout.tsx            # Readings layout wrapper
 │   │   ├── page.tsx              # Reading type selection
 │   │   ├── [type]/
-│   │   │   ├── layout.tsx        # Reading layout with Suspense
-│   │   │   ├── page.tsx          # TarotTable (drawing screen)
+│   │   │   ├── layout.tsx        # Pass-through (must stay a server component)
+│   │   │   ├── page.tsx          # Category-first drawing entry
 │   │   │   └── [id]/page.tsx     # Result page for saved readings
 │   │   └── history/page.tsx      # Reading history
-│   └── mini-app/                 # Mini App experience (NEW)
+│   └── mini-app/                 # Mini App experience
 │       └── page.tsx              # Streamlined Mini App entry
 ├── components/
 │   ├── tarot/
-│   │   ├── TarotTable.tsx        # Main card drawing state machine
-│   │   ├── TarotCard.tsx         # Individual card with 3D flip
+│   │   ├── MiniAppDrawing.tsx    # Main card drawing state machine
+│   │   ├── MiniAppCard.tsx       # Card with 3D flip (deck / slot / fluid)
+│   │   ├── TarotCard.tsx         # Card used by the saved-reading detail page
 │   │   ├── CardFront.tsx         # Card front display
-│   │   ├── CardBack.tsx          # Card back SVG design
-│   │   └── MiniAppCard.tsx       # Mobile-optimized card component (NEW)
+│   │   └── CardBack.tsx          # Card back SVG design
 │   ├── brand/
 │   │   ├── Logo.tsx              # Velora logo
 │   │   └── IntroAnimation.tsx    # 6-phase intro animation
@@ -561,7 +561,7 @@ maps to.
 
 - [x] `npm run typecheck` passes
 - [x] `npm run build` passes
-- [x] `npm run lint` passes (3 pre-existing warnings, all in untouched files)
+- [x] `npm run lint` passes — **0 warnings**
 - [x] All legacy reading routes resolve (`/readings`, `/readings/love`,
       `/readings/career`, `/readings/daily`, `/readings/general`)
 - [x] Unknown reading types return a real 404

@@ -84,13 +84,14 @@ tarot-website/
 │   ├── globals.css        # Global styles, glass effects, reduced-motion
 │   ├── layout.tsx         # Root layout with metadata, fonts
 │   ├── readings/          # Reading type pages
-│   │   └── [type]/page.tsx  # TarotTable container
-│   │   └── [type]/[id]/page.tsx  # Reading result page (unchanged)
-│   └── readings/layout.tsx  # Navigation, star background, intro animation
+│   │   └── [type]/page.tsx  # Category-first drawing entry (maps legacy types)
+│   │   └── [type]/[id]/page.tsx  # Saved reading detail
+│   └── readings/layout.tsx  # Navigation, star background, intro veil
 ├── components/
 │   ├── tarot/             # Tarot-specific components
-│   │   ├── TarotTable.tsx     # Main state machine & card grid
-│   │   ├── TableCard.tsx      # Individual card with tilt/flip
+│   │   ├── MiniAppDrawing.tsx  # Category-first 3-card state machine
+│   │   ├── MiniAppCard.tsx     # Card with 3D flip, deck/slot/fluid sizes
+│   │   ├── TarotCard.tsx       # Card used by the saved-reading detail page
 │   │   ├── CardBack.tsx       # Card back SVG
 │   │   ├── CardFront.tsx      # Card front display
 │   │   ├── TarotCardRevealed.tsx  # 3D flip component
@@ -175,15 +176,17 @@ The dev server runs on port 3000. CSS is compiled into `_next/static/css/app/lay
 
 ---
 
-## 🔄 State Machine (TarotTable)
+## 🔄 State Machine (MiniAppDrawing)
 
-The core of the redesign is `components/tarot/TarotTable.tsx`, which manages these phases:
+The reading flow is driven by `components/tarot/MiniAppDrawing.tsx`:
 
 ```
-setup  →  intro  →  shuffling  →  spread  →  selected  →  flipping  →  revealed  →  result
+category  →  intro  →  shuffling  →  selecting  →  revealing  →  placing  →  result
 ```
 
-Each phase triggers specific animations, card states, and transitions. The flow is driven by:
+Each of the three card positions repeats `shuffling → selecting → revealing →
+placing`. The phase is held in `phase`, with `step` (0–2) and `drawn` tracking
+progress through the spread. Transitions are driven by:
 
 - `useEffect` listeners per phase
 - Timer-based sequencing (respecting `prefers-reduced-motion`)
@@ -246,9 +249,12 @@ Configuration includes:
 ### Adding new reading types
 
 Edit `data/types.ts` to add a new `ReadingType`, then update:
-- `components/tarot/TarotTable.tsx` — `numCards` logic (line 65)
 - `utils/tarotUtils.ts` — `getReadingTypePositions()` and `getReadingTypeLabel()`
-- `app/readings/[type]/page.tsx` — if custom page logic needed
+- `app/readings/[type]/page.tsx` — `TYPE_TO_CATEGORY`, if it maps to a category
+
+> **Note:** this section describes the legacy `ReadingType` flow. The current
+> Mini App is category-first (`TarotCategory`), defined in `utils/tarotReading.ts`
+> — see `docs/BUG_REPORT.md` for how the two coexist.
 
 ### Modifying card appearances
 

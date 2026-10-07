@@ -157,7 +157,7 @@ MAX_IMAGE_BYTES = "5242880"
 ### Daily Reading (`/readings/daily`)
 | Test | Expected | Actual | Status |
 |------|----------|--------|--------|
-| TarotTable renders | Deck + instruction text | ✅ | PASS |
+| Drawing screen renders | Deck + instruction text | ✅ | PASS |
 | Deck emerges | Animation plays | ✅ | PASS |
 | Cards shuffle | Multiple layers of movement | ✅ | PASS |
 | Cards spread | Fan/arc formation | ✅ | PASS |
@@ -517,17 +517,18 @@ Tarot Website/
 │   ├── readings/
 │   │   ├── layout.tsx            # Readings layout
 │   │   ├── page.tsx              # Reading type selection
-│   │   ├── [type]/page.tsx       # TarotTable (drawing screen)
-│   │   ├── [type]/[id]/page.tsx  # Result page
+│   │   ├── [type]/page.tsx       # Category-first drawing screen
+│   │   ├── [type]/[id]/page.tsx  # Saved reading detail
 │   │   └── history/page.tsx      # Reading history
 │   └── explorer/page.tsx         # Tarot Explorer
 ├── components/
 │   ├── brand/
 │   │   ├── Logo.tsx              # Velora logo
-│   │   └── IntroAnimation.tsx    # 6-phase intro animation
+│   │   └── IntroAnimation.tsx    # 6-phase intro animation (with Skip)
 │   ├── tarot/
-│   │   ├── TarotTable.tsx        # Main card drawing state machine
-│   │   ├── TarotCard.tsx         # Individual card with 3D flip
+│   │   ├── MiniAppDrawing.tsx    # Main card drawing state machine
+│   │   ├── MiniAppCard.tsx       # Card with 3D flip (deck / slot / fluid)
+│   │   ├── TarotCard.tsx         # Card used by the saved-reading detail page
 │   │   ├── CardBack.tsx          # Card back design
 │   │   └── CardFront.tsx         # Card front design
 │   ├── Navigation.tsx            # Navigation with glass effect

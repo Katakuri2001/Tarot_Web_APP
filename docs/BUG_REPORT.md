@@ -601,8 +601,10 @@ constraint.
   three. That is product copy, so it was flagged rather than changed.
 - **No test covers bug #13.** Its impact was latent rather than visible, and a
   DOM test harness was not worth the dependency.
-- **Icons and social metadata are untouched.** Fixing #8 removed the broken
-  `icons:` metadata block and the 404-ing homepage `<img>`, but the deeper gaps
-  — no iOS home-screen icon, `twitter: card` claiming `summary_large_image` with
-  no image, no `metadataBase`, no robots/sitemap — all predate this work and
-  need a branding decision. Parked in `docs/ICONS_AND_SEO.md`.
+- **Social metadata is untouched.** The icon half of this is now **done**
+  (`ba19171`): `app/apple-icon.png` and `app/favicon.ico` are generated from
+  `app/icon.svg`, so iOS has a home-screen icon and the `/favicon.ico` probe
+  resolves. What remains is domain-dependent and parked in
+  `docs/ICONS_AND_SEO.md`: no `metadataBase`, no OG/twitter image (so
+  `twitter: card` still claims `summary_large_image`), and no robots/sitemap —
+  all declined for now pending a production domain.

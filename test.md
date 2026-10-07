@@ -344,7 +344,7 @@ curl https://velora-tarot-admin.kaungsethmue2001.workers.dev/api/admin/dashboard
 | # | Bug | Impact | Workaround | Fix |
 |---|-----|--------|------------|-----|
 | 7 | No `_headers` file for custom headers | Some security headers missing | Add `_headers` to Pages output | Create `_headers` file |
-| 8 | No `robots.txt` | Search engines may index admin pages | Add `robots.txt` | Create `public/robots.txt` |
+| 8 | No `robots.txt` | Search engines may index admin pages | Add `robots.txt` | Declined for now — needs a production domain. Use `app/robots.ts`, not `public/` (that dir does not exist) |
 | 9 | No Sitemap XML | SEO impact | Generate sitemap | Add `sitemap.xml` |
 
 ---
@@ -575,10 +575,13 @@ Tarot Website/
 │   └── package.json              # Worker dependencies
 ├── scripts/
 │   └── seed.ts                   # Database seed script
-├── public/                       # Static assets
-│   ├── favicon.ico
-│   ├── icons/
-│   └── cards/
+├── app/icon.svg                  # Velora mark — icon source of truth
+├── app/apple-icon.png            # 180x180, generated (iOS home screen)
+├── app/favicon.ico               # 16/32/48, generated
+├── scripts/generate-icons.mjs    # regenerate the two rasters (npm run icons:gen)
+# NOTE: there is no public/ directory. It is absent from this repository and
+# was never tracked in any commit. The icons live in app/, per Next's
+# file-based metadata convention. See docs/ICONS_AND_SEO.md.
 ├── wrangler.toml                 # Cloudflare Pages config
 ├── wrangler.admin.toml           # Cloudflare Worker config
 ├── next.config.js                # Next.js config
@@ -591,4 +594,12 @@ Tarot Website/
 
 *Generated: September 20, 2026*
 *Project: Velora Tarot*
+
+> **Superseded in part (2026-10-07).** This report predates the category-first
+> 3-card Mini App and the 14-bug fix pass. Sections 1-6 describe the older
+> reading-type flow. For current status see `docs/BUG_REPORT.md` (defects,
+> what was fixed, and what remains) and `docs/ICONS_AND_SEO.md` (icons and
+> social metadata). Two items below were corrected in place: the `public/`
+> directory listing, and the robots.txt remedy, which should use
+> `app/robots.ts` — `public/` does not exist in this repository.
 *Version: 1.0.0*

@@ -36,9 +36,16 @@ export default function TarotCard({
 }: TarotCardProps) {
   const reducedMotion = useReducedMotion();
 
+  /**
+   * `aspect-[2/3]` on the root is load-bearing: every child of this node is
+   * absolutely positioned (the 3-D flip wrapper holds two `inset-0` faces), so
+   * without an intrinsic height the box collapses to 0px tall and the card
+   * face renders as a 2px sliver.
+   */
+
   return (
     <motion.div
-      className={`perspective-1000 cursor-pointer ${className}`}
+      className={`perspective-1000 cursor-pointer aspect-[2/3] ${className}`}
       style={{ ...style }}
       onClick={onClick}
       onHoverStart={onHover}
@@ -49,7 +56,12 @@ export default function TarotCard({
       whileFocus={{ scale: 1.03, y: -5 }}
       tabIndex={tabIndex}
       role="button"
-      aria-label={ariaLabel || `Tarot card: ${card.name}`}
+      // Never announce the card's identity before it is turned over — the
+      // accessible name has to match what the sighted visitor can see. A
+      // caller-supplied label is only honoured once the card is face-up.
+      aria-label={
+        isRevealed ? ariaLabel || `Tarot card: ${card.name}` : "Face-down tarot card"
+      }
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
@@ -72,6 +84,7 @@ export default function TarotCard({
         <div
           className="absolute inset-0 backface-hidden"
           style={{ transform: "rotateY(180deg)", backfaceVisibility: "hidden" }}
+          aria-hidden={!isRevealed}
         >
           <CardFront
             name={card.name}

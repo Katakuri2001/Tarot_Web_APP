@@ -12,7 +12,13 @@ export default function ReadingsPage() {
     <>
       <StarBackground />
 
-      <main className="relative z-10 min-h-screen pt-24 px-4 pb-24">
+      {/*
+        A <div>, not a <main>: app/readings/layout.tsx already owns the single
+        <main> landmark for every route under /readings. Rendering a second one
+        here nests one landmark inside another, which assistive technology
+        reports as two mains with the inner one hidden.
+      */}
+      <div className="relative z-10 min-h-screen pt-24 px-4 pb-24">
         <div className="max-w-5xl mx-auto">
           <motion.div
             className="text-center mb-16"
@@ -69,7 +75,7 @@ export default function ReadingsPage() {
             ))}
           </div>
         </div>
-      </main>
+      </div>
     </>
   );
 }

@@ -8,7 +8,11 @@ export function SoundToggle() {
   return (
     <button
       onClick={toggle}
-      className="text-moonlight hover:text-gold-300 transition-colors p-1"
+      // The icon is 18px inside `p-1`, giving a 26x26 target — under the 44x44
+      // minimum in WCAG 2.5.5. A transparent pseudo-element extends the
+      // tappable area to 46x46 without changing the header's height, which the
+      // pages below rely on staying at 64px.
+      className="text-moonlight hover:text-gold-300 transition-colors p-1 relative after:absolute after:content-[''] after:-inset-2.5"
       aria-label={enabled ? "Sound on" : "Sound off"}
       title={enabled ? "Sound on" : "Sound off"}
     >

@@ -551,7 +551,10 @@ export default function MiniAppDrawing({ initialCategory, embedded = false }: Pr
         ) : (
           <button
             onClick={() => (phase === "category" ? router.push("/") : changeCategory())}
-            className="text-moonlight hover:text-gold-300 transition-colors p-2 -ml-2"
+            // `p-2` around a 20px icon gives a 36x36 target; the transparent
+            // pseudo-element takes it to 44x44 (WCAG 2.5.5) without shifting
+            // the header.
+            className="text-moonlight hover:text-gold-300 transition-colors p-2 -ml-2 relative after:absolute after:content-[''] after:-inset-1"
             aria-label="Go back"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

@@ -13,6 +13,24 @@ const navLinks = [
   { href: "/about", label: "About" },
 ];
 
+/**
+ * Invisible hit-area expansion for the header's small targets (WCAG 2.5.5,
+ * 44x44 minimum).
+ *
+ * The nav links are a single line of 14px text (~20px tall) and the sound
+ * toggle is an 18px icon, all far short of the minimum. Padding them out to
+ * 44px would push the fixed header past the 64px (`pt-16`) that every page
+ * below it reserves, so the tappable box is extended with a transparent
+ * pseudo-element instead: the hit area grows, the layout does not.
+ *
+ * Only full class strings appear here so Tailwind's scanner picks them up.
+ */
+const LINK_HIT_AREA =
+  "relative after:absolute after:content-[''] after:inset-x-0 after:-inset-y-3";
+const LOGO_HIT_AREA =
+  "relative after:absolute after:content-[''] after:inset-x-0 after:-inset-y-2";
+const ICON_HIT_AREA = "relative after:absolute after:content-[''] after:-inset-0.5";
+
 export default function Navigation() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -36,7 +54,11 @@ export default function Navigation() {
       aria-label="Main navigation"
     >
       <div className="px-4 md:px-8 py-3 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity" aria-label="Velora Home">
+        <Link
+          href="/"
+          className={`flex items-center gap-2 hover:opacity-80 transition-opacity ${LOGO_HIT_AREA}`}
+          aria-label="Velora Home"
+        >
           <Logo size="compact" />
         </Link>
 
@@ -46,7 +68,7 @@ export default function Navigation() {
             <Link
               key={link.href}
               href={link.href}
-              className={`text-sm transition-colors duration-300 ${
+              className={`text-sm transition-colors duration-300 ${LINK_HIT_AREA} ${
                 pathname === link.href
                   ? "text-gold-300 font-medium"
                   : "text-moonlight hover:text-gold-300"
@@ -61,7 +83,7 @@ export default function Navigation() {
 
         {/* Mobile toggle */}
         <button
-          className="md:hidden text-warmwhite p-2"
+          className={`md:hidden text-warmwhite p-2 ${ICON_HIT_AREA}`}
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label={mobileOpen ? "Close menu" : "Open menu"}
           aria-expanded={mobileOpen}
@@ -86,7 +108,7 @@ export default function Navigation() {
             <Link
               key={link.href}
               href={link.href}
-              className={`text-sm transition-colors ${
+              className={`text-sm transition-colors ${LINK_HIT_AREA} ${
                 pathname === link.href ? "text-gold-300" : "text-moonlight"
               }`}
               onClick={() => setMobileOpen(false)}

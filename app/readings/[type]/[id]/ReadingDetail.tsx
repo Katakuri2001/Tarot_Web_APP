@@ -130,7 +130,12 @@ export default function ReadingDetail({ id, readingType }: ReadingDetailProps) {
     <>
       <StarBackground />
 
-      <main className="relative z-10 min-h-screen pt-16 sm:pt-20 px-4 pb-16 safe-top safe-bottom">
+      {/*
+        A <div>, not a <main>: app/readings/layout.tsx already owns the single
+        <main> landmark for every route under /readings, so a second one here
+        would nest one landmark inside another.
+      */}
+      <div className="relative z-10 min-h-screen pt-16 sm:pt-20 px-4 pb-16 safe-top safe-bottom">
         <div className="max-w-5xl mx-auto">
           <motion.div
             className="text-center mb-12"
@@ -295,7 +300,7 @@ export default function ReadingDetail({ id, readingType }: ReadingDetailProps) {
             </motion.div>
           )}
         </div>
-      </main>
+      </div>
     </>
   );
 }

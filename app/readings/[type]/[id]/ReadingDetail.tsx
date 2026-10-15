@@ -252,11 +252,20 @@ export default function ReadingDetail({ id, readingType }: ReadingDetailProps) {
                 })}
               </div>
 
-              <div className="glass p-5 sm:p-6 rounded-xl">
+              {/*
+                This box is a sibling of the `grid gap-4` above, not one of its
+                items, so the grid's gap does not space the last card away from
+                it. `mt-4` keeps the same 16px rhythm the cards use between
+                themselves; without it the two glass panels butt together.
+              */}
+              <div className="glass p-5 sm:p-6 rounded-xl mt-4">
                 <h3 className="font-serif-display text-lg text-gold-300 mb-3">Reading Summary</h3>
                 <p className="text-moonlight text-sm leading-relaxed">
-                  Your {cards.category.toLowerCase()} reading reveals {cards.cards.length}
-                  {cards.cards.length === 1 ? "" : "s"} card{cards.cards.length > 1 ? "s" : ""} of insight.{" "}
+                  {/* The count is a number, so it must not be pluralised — an
+                      earlier version appended "s" to it as well as to the noun
+                      and read "3s cards of insight". */}
+                  Your {cards.category.toLowerCase()} reading reveals {cards.cards.length}{" "}
+                  card{cards.cards.length > 1 ? "s" : ""} of insight.{" "}
                   {cards.cards.map((c) => {
                     const cd = getCardById(c.cardId);
                     return cd ? cd.name : "";

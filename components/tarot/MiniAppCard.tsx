@@ -103,7 +103,13 @@ export default function MiniAppCard({
       }
       role="button"
       tabIndex={isClickable ? 0 : -1}
-      aria-label={`${card.name}, ${orientation}`}
+      // The deck fans out face-down, so a screen reader must not be told what
+      // each card is — that would hand the answer over before the visitor
+      // picks. The card's position in the fan is still announced so the
+      // visitor can tell the choices apart.
+      aria-label={
+        isRevealed ? `${card.name}, ${orientation}` : `Face-down tarot card ${index + 1}`
+      }
       onKeyDown={(e) => {
         if ((e.key === "Enter" || e.key === " ") && isClickable) {
           e.preventDefault();
@@ -126,6 +132,7 @@ export default function MiniAppCard({
         <div
           className="absolute inset-0 backface-hidden"
           style={{ transform: "rotateY(180deg)", backfaceVisibility: "hidden" }}
+          aria-hidden={!isRevealed}
         >
           <CardFront
             name={card.name}

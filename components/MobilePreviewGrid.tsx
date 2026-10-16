@@ -66,7 +66,9 @@ export default function MobilePreviewGrid() {
               <>
                 <a
                   href={route.path}
-                  className="font-serif-display text-base text-warmwhite hover:text-gold-300 transition-colors"
+                  // A single line of 16px text (~24px tall). The transparent
+                  // pseudo-element lifts the target to 44x44 (WCAG 2.5.5).
+                  className="font-serif-display text-base text-warmwhite hover:text-gold-300 transition-colors relative after:absolute after:content-[''] after:inset-x-0 after:-inset-y-3"
                 >
                   {route.title}
                 </a>
